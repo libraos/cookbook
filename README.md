@@ -16,7 +16,20 @@ If you're trying to learn the SDK surface ("how do I call `messages.create`?"), 
 
 ## Recipes
 
-| Vertical | What it shows |
+Each recipe is the runnable companion to a Nova OS docs use-case guide (linked in its README) — prose there, working code here.
+
+### Use-case recipes
+
+| Recipe | What it shows |
+|---|---|
+| [`ticket-routing/`](ticket-routing/) | Classify support tickets into a validated `intent` with `output_type` + `repair`, plus an accuracy eval loop |
+| [`content-moderation/`](content-moderation/) | Risk-score UGC (`allow`/`flag`/`block` + score) with `output_type`, layered on the built-in AI Firewall |
+| [`document-qa/`](document-qa/) | Grounded, cited answers over ingested documents with `knowledge_bindings` + `knowledge_gate` (and honest refusal on a miss) |
+| [`customer-support/`](customer-support/) | A persona that answers from a KB **and** calls a Mode B custom-tool webhook for live order status, with guardrails on |
+
+### Vertical worked examples
+
+| Recipe | What it shows |
 |---|---|
 | [`legaltech/`](legaltech/) | Contract clause extraction with structured output + a Mode B custom-tool webhook for partner-side precedent lookup |
 | [`healthcare/`](healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-end-user identity passthrough for HIPAA-style isolation |

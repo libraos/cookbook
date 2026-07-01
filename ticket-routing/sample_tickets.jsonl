@@ -1,0 +1,10 @@
+{"ticket": "I've been trying to reset my password for an hour. The reset email never arrives even after multiple attempts. This is blocking our whole team.", "expected": "Technical issue"}
+{"ticket": "My latest invoice shows the wrong amount — I was charged for 10 seats but we only have 6.", "expected": "Order-related"}
+{"ticket": "Someone just logged into my account from a device in another country that I don't recognise.", "expected": "Security"}
+{"ticket": "Do you have a Spanish-language version of the mobile app on the roadmap for this year?", "expected": "Product information"}
+{"ticket": "How do I export my dashboard to a PDF? I clicked around but couldn't find the option.", "expected": "User guidance"}
+{"ticket": "Production is completely down for all of our users and we are losing revenue every minute. Please escalate immediately.", "expected": "Emergency"}
+{"ticket": "I'm honestly delighted with the new reporting feature — it saved my team hours this week. Thank you!", "expected": "Feedback"}
+{"ticket": "Please close my account and delete all of my data under GDPR. I no longer use the service.", "expected": "Account management"}
+{"ticket": "Why did my subscription renew without any warning email? I would have cancelled if I'd known.", "expected": "Account management"}
+{"ticket": "The CSV export button does nothing when I click it — no download, no error, nothing happens.", "expected": "Technical issue"}

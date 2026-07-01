@@ -1,0 +1,6 @@
+{"content": "Thanks everyone for the warm welcome to the community — excited to be here and learn from you all!", "expected": "allow"}
+{"content": "Check out my store for 90% OFF designer bags!! click bit.ly/xx buy now limited time!!!", "expected": "block"}
+{"content": "You're all idiots and this product is garbage, whoever built it should be ashamed.", "expected": "flag"}
+{"content": "Here is my home address 42 Elm Street and my phone 555-0199 if anyone wants to meet up.", "expected": "flag"}
+{"content": "I've been feeling really hopeless lately and I don't see the point in anything anymore.", "expected": "flag"}
+{"content": "Great tutorial, this finally helped me understand how the export feature works. Bookmarked!", "expected": "allow"}
