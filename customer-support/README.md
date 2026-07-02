@@ -54,4 +54,4 @@ A: Your order ORD-5591 is in transit with UPS (tracking 1Z999AA10123456784),
 
 ## Prose companion
 
-The Nova OS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://os.novaos.ai → Nova OS → Use Cases → Customer Support Agent**.
+The Nova OS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → Nova OS → Use Cases → Customer Support Agent**.

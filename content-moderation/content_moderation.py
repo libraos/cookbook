@@ -12,7 +12,7 @@ End-to-end partner-side script:
 
 The prose companion (policy design, category taxonomy, the firewall threshold
 knob) lives in the Nova OS docs:
-https://os.novaos.ai → Nova OS → Use Cases → Content Moderation.
+https://docs.meganova.ai → Nova OS → Use Cases → Content Moderation.
 
 Prerequisites::
 

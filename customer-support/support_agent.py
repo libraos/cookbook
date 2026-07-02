@@ -16,7 +16,7 @@ order-lookup tool callback has somewhere to land.
 
 The prose companion (knowledge + tools + guardrails + streaming together) lives
 in the Nova OS docs:
-https://os.novaos.ai → Nova OS → Use Cases → Customer Support Agent.
+https://docs.meganova.ai → Nova OS → Use Cases → Customer Support Agent.
 
 Prerequisites::
 

@@ -45,4 +45,4 @@ Accuracy: 9/10 = 90%
 
 ## Prose companion
 
-The Nova OS docs guide covers the decision ("should you use an LLM for routing?"), success criteria, and integration patterns (push webhook vs pull batch): **https://os.novaos.ai → Nova OS → Use Cases → Ticket Routing**.
+The Nova OS docs guide covers the decision ("should you use an LLM for routing?"), success criteria, and integration patterns (push webhook vs pull batch): **https://docs.meganova.ai → Nova OS → Use Cases → Ticket Routing**.

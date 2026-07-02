@@ -10,7 +10,7 @@ End-to-end partner-side script:
 
 The prose companion (collection setup, retrieval tuning, the knowledge_gate
 score floor) lives in the Nova OS docs:
-https://os.novaos.ai → Nova OS → Use Cases → Document Q&A Copilot.
+https://docs.meganova.ai → Nova OS → Use Cases → Document Q&A Copilot.
 
 Prerequisites::
 

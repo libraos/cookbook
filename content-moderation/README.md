@@ -41,4 +41,4 @@ Verdict accuracy: 6/6 = 100%
 
 ## Prose companion
 
-The Nova OS docs guide covers policy design, the firewall relationship, and success criteria: **https://os.novaos.ai → Nova OS → Use Cases → Content Moderation**.
+The Nova OS docs guide covers policy design, the firewall relationship, and success criteria: **https://docs.meganova.ai → Nova OS → Use Cases → Content Moderation**.

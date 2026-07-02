@@ -44,4 +44,4 @@ A: The handbook doesn't cover parental leave, so I can't state a policy from the
 
 ## Prose companion
 
-The Nova OS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://os.novaos.ai → Nova OS → Use Cases → Document Q&A Copilot**.
+The Nova OS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → Nova OS → Use Cases → Document Q&A Copilot**.
