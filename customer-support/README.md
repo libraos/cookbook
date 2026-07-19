@@ -43,7 +43,7 @@ A: Your order ORD-5591 is in transit with UPS (tracking 1Z999AA10123456784),
    estimated to arrive 2026-07-04.
 ```
 
-> **Local testing:** `NOVA_CB_URL` must be reachable *from Nova OS*. For local dev, expose `webhook_server.py` with a tunnel (ngrok/cloudflared) and set `NOVA_CB_URL` to the tunnel URL.
+> **Local testing:** `NOVA_CB_URL` must be reachable *from Libra OS*. For local dev, expose `webhook_server.py` with a tunnel (ngrok/cloudflared) and set `NOVA_CB_URL` to the tunnel URL.
 
 ## Adapting to your data
 
@@ -54,4 +54,4 @@ A: Your order ORD-5591 is in transit with UPS (tracking 1Z999AA10123456784),
 
 ## Prose companion
 
-The Nova OS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → Nova OS → Use Cases → Customer Support Agent**.
+The Libra OS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → Libra OS → Use Cases → Customer Support Agent**.

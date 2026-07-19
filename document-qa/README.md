@@ -14,7 +14,7 @@ End-to-end worked example: a partner ingests policy documents into a knowledge c
 |---|---|
 | `document_qa.py` | Ingests inline handbook docs, registers the copilot, asks in-scope + out-of-scope questions |
 
-The recipe ingests short text inline so it's self-contained. In a real deployment you'd upload the actual files with `c.documents.upload(...)` (PDF/DOCX/etc. — Nova OS extracts, chunks, embeds, and OCRs scanned pages automatically).
+The recipe ingests short text inline so it's self-contained. In a real deployment you'd upload the actual files with `c.documents.upload(...)` (PDF/DOCX/etc. — Libra OS extracts, chunks, embeds, and OCRs scanned pages automatically).
 
 ## Run
 
@@ -44,4 +44,4 @@ A: The handbook doesn't cover parental leave, so I can't state a policy from the
 
 ## Prose companion
 
-The Nova OS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → Nova OS → Use Cases → Document Q&A Copilot**.
+The Libra OS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → Libra OS → Use Cases → Document Q&A Copilot**.

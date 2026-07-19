@@ -4,7 +4,7 @@ End-to-end partner-side script:
     1. Creates a `legal-clause-extractor` employee with a model cascade
        (Opus answer, Flash skill) and a Mode B custom tool that the agent
        can call to look up precedent in the partner's own clause DB.
-    2. Submits an MSA text. Nova OS routes it through the agent, which
+    2. Submits an MSA text. Libra OS routes it through the agent, which
        extracts clauses, calls back to the precedent-lookup tool one or
        more times, and returns a structured JSON object.
     3. Pretty-prints the validated structured output.

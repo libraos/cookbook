@@ -5,14 +5,14 @@ End-to-end partner-side script:
        a JSON-schema contract — every decision is a typed
        `{reasoning, verdict, categories, risk_score}` object.
     2. Runs a small labelled set of UGC snippets through it and reports accuracy.
-    3. Layers on top of Nova OS's built-in AI Firewall: the firewall is a
+    3. Layers on top of Libra OS's built-in AI Firewall: the firewall is a
        platform-level inbound guardrail (prompt-injection / jailbreak / abuse)
        that runs BEFORE your agent; this agent is your *domain* policy on top —
        the two are complementary, not a substitute for each other.
 
 The prose companion (policy design, category taxonomy, the firewall threshold
-knob) lives in the Nova OS docs:
-https://docs.meganova.ai → Nova OS → Use Cases → Content Moderation.
+knob) lives in the Libra OS docs:
+https://docs.meganova.ai → Libra OS → Use Cases → Content Moderation.
 
 Prerequisites::
 

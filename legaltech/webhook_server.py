@@ -1,7 +1,7 @@
 """Legaltech — partner-side webhook server hosting the precedent-lookup tool.
 
 Pairs with `contract_clause_extraction.py`. Every time the agent calls the
-`lookup_clause_precedent` tool, Nova OS POSTs a signed JSON payload here.
+`lookup_clause_precedent` tool, Libra OS POSTs a signed JSON payload here.
 The HMAC-SHA256 signature is verified by `WebhookRouter` before the handler
 runs.
 
@@ -12,7 +12,7 @@ whatever your legal-tech stack uses). The handler signature is unchanged.
 Prerequisites::
 
     pip install nova-os-sdk fastapi uvicorn
-    export NOVA_CB_SECRET=<copy from Nova OS dashboard or generate locally>
+    export NOVA_CB_SECRET=<copy from Libra OS dashboard or generate locally>
 
 Run::
 

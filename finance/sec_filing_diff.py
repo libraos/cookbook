@@ -11,7 +11,7 @@ End-to-end partner-side script:
 
 Async is the right fit because the analysis takes 60-180 seconds — well past
 HTTP timeouts on most reverse proxies. The pattern generalises to any
-long-running Nova OS workload (multi-document research, full-corpus risk
+long-running Libra OS workload (multi-document research, full-corpus risk
 review, multi-step plan execution).
 
 Prerequisites::

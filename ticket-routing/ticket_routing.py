@@ -11,7 +11,7 @@ End-to-end partner-side script:
 
 The prose companion (decision criteria, taxonomy design, hierarchical
 classification for large taxonomies, few-shot via a bound collection) lives in
-the Nova OS docs: https://docs.meganova.ai → Nova OS → Use Cases → Ticket Routing.
+the Libra OS docs: https://docs.meganova.ai → Libra OS → Use Cases → Ticket Routing.
 
 Prerequisites::
 

@@ -5,7 +5,7 @@ End-to-end worked example: a partner sends user-generated content to a moderatio
 ## What this demonstrates
 
 - **`output_type` JSON-schema validation** — every decision is a typed object with an `allow|flag|block` verdict, a category list, and a 0–1 risk score. Your pipeline branches on `verdict` and `risk_score`; it never parses prose.
-- **App policy layered on the platform firewall** — Nova OS ships an **AI Firewall** as an inbound guardrail (prompt-injection / jailbreak / abuse detection) that runs on *every* request before your agent sees it, tunable via `NOVA_OS_FIREWALL_THRESHOLD`. This recipe adds your *domain* moderation policy on top. The two are complementary: the firewall protects the platform; this agent enforces your community standards.
+- **App policy layered on the platform firewall** — Libra OS ships an **AI Firewall** as an inbound guardrail (prompt-injection / jailbreak / abuse detection) that runs on *every* request before your agent sees it, tunable via `NOVA_OS_FIREWALL_THRESHOLD`. This recipe adds your *domain* moderation policy on top. The two are complementary: the firewall protects the platform; this agent enforces your community standards.
 - **Risk banding over a hard label** — returning a continuous `risk_score` alongside the verdict lets you set your own automation bands (auto-block high, human-review the middle, auto-allow low) and move them without retraining anything.
 
 ## Files
@@ -41,4 +41,4 @@ Verdict accuracy: 6/6 = 100%
 
 ## Prose companion
 
-The Nova OS docs guide covers policy design, the firewall relationship, and success criteria: **https://docs.meganova.ai → Nova OS → Use Cases → Content Moderation**.
+The Libra OS docs guide covers policy design, the firewall relationship, and success criteria: **https://docs.meganova.ai → Libra OS → Use Cases → Content Moderation**.

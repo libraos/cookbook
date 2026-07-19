@@ -103,7 +103,7 @@ async def main() -> None:
         )
 
         # 2. Attach the triage agent. `output_type.violation_mode=repair` means
-        #    if the model's first reply doesn't match TRIAGE_SCHEMA, Nova OS
+        #    if the model's first reply doesn't match TRIAGE_SCHEMA, Libra OS
         #    re-prompts once with the schema in the system prompt before
         #    returning the result. Better than a 422 in a clinical workflow.
         await c.agents.create(

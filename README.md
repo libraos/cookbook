@@ -1,6 +1,6 @@
 # nova-os-cookbook
 
-End-to-end recipes for building partner applications on top of **Nova OS** — the agent runtime served by [`MeganovaAI/nova-os`](https://github.com/MeganovaAI/nova-os) and consumed via the [`nova-os-sdk`](https://github.com/MeganovaAI/nova-os-sdk).
+End-to-end recipes for building partner applications on top of **Libra OS** — the agent runtime served by [`MeganovaAI/nova-os`](https://github.com/MeganovaAI/nova-os) and consumed via the [`nova-os-sdk`](https://github.com/libraos/sdk).
 
 Each recipe is a runnable, self-contained workflow that wires the SDK together with surrounding partner-side code: webhook receivers, sample input documents, structured-output validators, identity passthrough, async-job patterns. Modeled on [`anthropics/claude-cookbooks`](https://github.com/anthropics/claude-cookbooks).
 
@@ -9,14 +9,14 @@ Each recipe is a runnable, self-contained workflow that wires the SDK together w
 | Repo | Purpose |
 |---|---|
 | [`MeganovaAI/nova-os`](https://github.com/MeganovaAI/nova-os) | Server runtime. Deploy this to host agents. |
-| [`MeganovaAI/nova-os-sdk`](https://github.com/MeganovaAI/nova-os-sdk) | Client SDK + per-resource call-pattern snippets (`messages.create`, `agents.list`, …). The minimal surface a partner needs to call a running Nova OS. |
+| [`MeganovaAI/nova-os-sdk`](https://github.com/libraos/sdk) | Client SDK + per-resource call-pattern snippets (`messages.create`, `agents.list`, …). The minimal surface a partner needs to call a running Libra OS. |
 | **this repo** | Vertical workflow recipes that compose the SDK with surrounding partner code. Pick by use case, not by API method. |
 
 If you're trying to learn the SDK surface ("how do I call `messages.create`?"), start in `nova-os-sdk/examples/`. If you're building an application ("how do I extract clauses from contracts?"), start here.
 
 ## Recipes
 
-Each recipe is the runnable companion to a Nova OS docs use-case guide (linked in its README) — prose there, working code here.
+Each recipe is the runnable companion to a Libra OS docs use-case guide (linked in its README) — prose there, working code here.
 
 ### Use-case recipes
 

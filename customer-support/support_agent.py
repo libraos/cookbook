@@ -15,8 +15,8 @@ Pair with `webhook_server.py` (FastAPI) running on `${NOVA_CB_URL}` so the
 order-lookup tool callback has somewhere to land.
 
 The prose companion (knowledge + tools + guardrails + streaming together) lives
-in the Nova OS docs:
-https://docs.meganova.ai → Nova OS → Use Cases → Customer Support Agent.
+in the Libra OS docs:
+https://docs.meganova.ai → Libra OS → Use Cases → Customer Support Agent.
 
 Prerequisites::
 
@@ -46,7 +46,7 @@ from nova_os import Client
 COLLECTION = "support-kb"
 KB_PATH = Path(__file__).with_name("sample_support_kb.md")
 
-# Mode B custom tool: Nova OS POSTs a signed payload to callback_url when the
+# Mode B custom tool: Libra OS POSTs a signed payload to callback_url when the
 # agent decides to look up an order. The partner-side handler lives in
 # webhook_server.py.
 CUSTOM_TOOLS: list[dict] = [

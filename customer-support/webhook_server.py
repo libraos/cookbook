@@ -1,7 +1,7 @@
 """Customer support — partner-side webhook hosting the order-lookup tool.
 
 Pairs with `support_agent.py`. Every time the agent calls the `order_lookup`
-tool, Nova OS POSTs a signed JSON payload here. The HMAC-SHA256 signature is
+tool, Libra OS POSTs a signed JSON payload here. The HMAC-SHA256 signature is
 verified by `WebhookRouter` before the handler runs.
 
 In production: replace the in-memory `_ORDER_DB` with a real query against your
@@ -11,7 +11,7 @@ signature is unchanged.
 Prerequisites::
 
     pip install nova-os-sdk fastapi uvicorn
-    export NOVA_CB_SECRET=<copy from Nova OS dashboard or generate locally>
+    export NOVA_CB_SECRET=<copy from Libra OS dashboard or generate locally>
 
 Run::
 

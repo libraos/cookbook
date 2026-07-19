@@ -9,8 +9,8 @@ End-to-end partner-side script:
        NOT (the agent should decline rather than fabricate).
 
 The prose companion (collection setup, retrieval tuning, the knowledge_gate
-score floor) lives in the Nova OS docs:
-https://docs.meganova.ai → Nova OS → Use Cases → Document Q&A Copilot.
+score floor) lives in the Libra OS docs:
+https://docs.meganova.ai → Libra OS → Use Cases → Document Q&A Copilot.
 
 Prerequisites::
 
@@ -35,7 +35,7 @@ COLLECTION = "employee-handbook"
 
 # In a real deployment you'd upload PDFs/DOCX with `c.documents.upload(...)`;
 # here we ingest a few short text docs inline so the recipe is self-contained.
-# Nova OS chunks, embeds, and indexes each one automatically.
+# Libra OS chunks, embeds, and indexes each one automatically.
 DOCS: list[dict] = [
     {
         "title": "pto-policy",
