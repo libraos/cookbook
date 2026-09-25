@@ -149,9 +149,6 @@ do them for a normal user:
 - **Seeing or deleting your memory item by item.** The panel shows the
   condensed notes; there's no user-facing delete
   ([libraos#1318](https://github.com/libraos/libraos/issues/1318)).
-- **Clean citations.** The agent often names its source by storage path
-  (`users/<id>/my-documents/file.txt`) despite being asked for the file name.
-  The app shows the file name from `cited_sources` under each answer.
 
 ## Gotchas we hit
 
@@ -166,6 +163,12 @@ do them for a normal user:
 - **A just-created conversation can 404 for a moment.** With streaming we saw
   `PATCH /v1/conversations/:id` return 404 when sent straight after the reply,
   and succeed a moment later. `renameConversation()` retries briefly.
+- **Retrieved documents carry their storage path.** The kernel hands each
+  retrieved chunk to the model labelled `Source: users/<id>/my-documents/…`, and
+  models like to repeat it. [`assistant.md`](libraos-app/agents/assistant.md)
+  shows the model the exact citation form it wants, and
+  [`Markdown.tsx`](web/src/Markdown.tsx) trims any storage path that slips
+  through to its file name.
 - **Mount a volume for documents.** Uploaded files live in the container at
   `/app/data/nova-os/documents`. Without the `documents` volume, recreating the
   container deletes the files, but their indexed text stays in Postgres, so the
