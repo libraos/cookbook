@@ -1,0 +1,175 @@
+# Personal assistant
+
+A small but real assistant app on LibraOS. People sign in with their LibraOS
+account and get:
+
+- **Chat** with the app's own agent.
+- **Past conversations**, listed and resumable.
+- **My documents.** Upload files; the assistant answers from them, and only
+  their owner can search them.
+- **Long-term memory.** Tell it something once, and it still knows it in a new
+  conversation.
+
+```
+personal-assistant/
+├── libraos-app/          the LibraOS side: an app with one agent
+│   ├── nova-app.yaml
+│   └── agents/assistant.md
+├── scripts/setup.sh      installs the app, creates a demo user
+└── web/                  the browser app (Vite + React + TypeScript)
+```
+
+There is no backend of our own. The browser signs the user in and calls the
+kernel with *their* token, so every answer is scoped to them by the kernel:
+their conversations, their documents, their memory. All of it runs as a
+normal user, not an admin.
+
+## Quickstart
+
+1. Start the kernel from [`get-started/`](../../get-started/README.md). Its
+   `docker-compose.yml` already mounts `libraos-app/` into the kernel and
+   switches on memory and document indexing. In `get-started/.env`, set
+   `PA_DEMO_PASSWORD` (12+ characters) and check that `LIBRA_OS_OIDC_CLIENTS`
+   includes `personal-assistant=http://localhost:5180/callback`.
+
+   ```bash
+   cd get-started && docker compose up -d
+   ```
+
+2. Install the app and create the demo user (safe to re-run):
+
+   ```bash
+   apps/personal-assistant/scripts/setup.sh
+   # app: personal-assistant 0.1.0, 1 agent(s)
+   # user: created demo@example.com
+   ```
+
+3. Run the web app:
+
+   ```bash
+   cd apps/personal-assistant/web
+   npm install
+   npm run dev          # http://localhost:5180
+   ```
+
+   Sign in as `demo@example.com` with your `PA_DEMO_PASSWORD`.
+
+Try this: tell it something about yourself, then upload a file (`.txt`, `.md`,
+`.pdf` or `.docx`) and ask about it in a **New chat**. Start a third chat and
+ask what it knows about you.
+
+## How it works
+
+### The agent (`libraos-app/`)
+
+An *app* is a folder the kernel installs: [`nova-app.yaml`](libraos-app/nova-app.yaml)
+names it and points at its agents, and each `agents/<id>.md` is one agent. The
+frontmatter configures it and the body is its system prompt.
+[`assistant.md`](libraos-app/agents/assistant.md) is a persona with
+`knowledge_bindings: ["*"]`: "search every collection *the caller* may read".
+For a normal user that's only their own uploads.
+
+The kernel scans `$LIBRA_OS_APPS_ROOT` (default `/var/nova-os/apps`) at boot;
+`POST /v1/apps/personal-assistant/install` (admin) registers or reloads it
+without a restart. That's what `setup.sh` calls, so after editing
+`assistant.md`, re-run `setup.sh`.
+
+### Sign-in (`web/src/auth.ts`)
+
+OIDC Authorization Code + PKCE, as explained step by step in
+[`get-started/02-sign-in-with-libraos`](../../get-started/02-sign-in-with-libraos/README.md).
+On top of that, this app asks for `offline_access` to get a refresh token, and
+`authFetch()` refreshes once on a 401. Refresh tokens rotate (each works once),
+so concurrent 401s share one refresh. The Vite dev server proxies `/oauth`, `/v1`
+and `/api` to the kernel, so the app and the kernel share an origin, as they
+would behind one reverse proxy in production.
+
+### Every kernel call (`web/src/api.ts`)
+
+| Feature | Call |
+|---|---|
+| Who am I | `GET /oauth/userinfo` |
+| Chat | `POST /v1/apps/personal-assistant/agents/assistant/chat` with `{messages, conversation_id}` |
+| Conversation list | `GET /v1/conversations?agent=assistant` |
+| Resume | `GET /v1/conversations/:id` for the messages, then keep chatting with that `conversation_id` |
+| Title / delete | `PATCH /v1/conversations/:id {title}` / `DELETE /v1/conversations/:id` |
+| Upload | `POST /api/documents/upload/my-documents`, multipart field `file` |
+| List documents | `GET /api/documents/tree/my-documents` |
+| Memory | `GET /v1/managed/memory?agent_id=assistant` |
+
+Things worth knowing:
+
+- **Send the whole conversation every turn.** The chat route does not replay
+  history. `conversation_id` only says where to save the turn. On resume, the
+  app loads the stored messages and sends them all with the next question
+  ([`Chat.tsx`](web/src/Chat.tsx)).
+- **New conversations are untitled.** The app names each one after its first
+  question with a `PATCH`.
+- **Uploads are private by construction.** For a normal user the kernel stores
+  the file under their own folder and indexes it into a collection named
+  `user_<their id>`, whatever the request says. Another user asking the same
+  question gets "I don't have that information".
+- **Memory is automatic.** With `LIBRA_OS_OBSERVATIONAL_MEMORY=1` the kernel
+  records each turn per (user, agent) and gives it back to the agent in every
+  later conversation. After roughly 8,000 tokens it condenses them into notes,
+  which is what the **What I remember** panel shows. Before then the panel is
+  empty, but recall already works.
+- **Document search is keyword (lexical) search** on this setup: the stock
+  compose has no vector database, so the kernel falls back to Postgres full-text
+  search. Answers report `"grounding": "degraded_retrieval"`. Ask with words that
+  appear in the document.
+
+## Not yet
+
+Left out on purpose, because today's kernel (v0.1.20) can't do them, or can't
+do them for a normal user:
+
+- **Streaming replies.** The kernel streams (`"stream": true`, server-sent
+  events), and the app did at first. But a streamed turn is never written to
+  long-term memory, so the next conversation had forgotten everything. We
+  checked: after streamed turns the user's `observation_logs` row did not exist;
+  one non-streamed turn created it. The streaming handler never appends to the
+  memory buffer ([libraos#925](https://github.com/libraos/libraos/issues/925)).
+  The app waits for the full reply until that's fixed.
+- **Personal Gmail or calendar.** Connectors are organization-wide, set up by
+  an admin; there is no per-user mailbox or calendar a normal user can connect.
+- **Acting for you, with your approval.** Actions with side effects go through
+  the kernel's approval queue, and only admins can approve. A user can't
+  approve their own assistant's action, so this assistant only talks.
+- **Scheduled tasks or a daily briefing.** The kernel has no scheduler.
+- **Deleting a document.** `DELETE /api/documents/file/…` removes the file, but
+  its indexed text stays searchable, so the assistant would keep answering from
+  it. The app offers no delete rather than a delete that doesn't.
+- **Seeing or deleting your memory item by item.** The panel shows the
+  condensed notes; there's no user-facing delete
+  ([libraos#1318](https://github.com/libraos/libraos/issues/1318)).
+- **Clean citations.** The agent often names its source by storage path
+  (`users/<id>/my-documents/file.txt`) despite being asked for the file name.
+  The app shows the file name from `cited_sources` under each answer.
+
+## Gotchas we hit
+
+- **`agents: agents` in `nova-app.yaml` is required.** Leave it out and install
+  still reports `"status":"active"`, but with `"agents_registered":0`, and chat
+  returns `404 agent not found: assistant`. `setup.sh` prints the agent count so
+  you notice. `schema_prefix` is required even with no migrations.
+- **App agent ids are not namespaced outside the chat URL.** Conversations
+  (`agent_id`) and memory (`agent_id=`) know this agent as plain `assistant`,
+  not `personal-assistant/assistant`, so another agent called `assistant` on the
+  same kernel would show up in the same places. Pick distinctive ids.
+- **A just-created conversation can 404 for a moment.** With streaming we saw
+  `PATCH /v1/conversations/:id` return 404 when sent straight after the reply,
+  and succeed a moment later. `renameConversation()` retries briefly.
+- **Mount a volume for documents.** Uploaded files live in the container at
+  `/app/data/nova-os/documents`. Without the `documents` volume, recreating the
+  container deletes the files, but their indexed text stays in Postgres, so the
+  assistant answers from files the list no longer shows.
+- **Auto-indexing is off by default.** Without `LIBRA_OS_SUPERNOVA_ENABLED=true`
+  uploads are stored but never searchable; the boot log says so at ERROR level
+  (`capability not active … supernova_autoindex`).
+- **The demo user is created by invitation.** `POST /api/admin/users/invite`
+  (admin) returns an accept link, and `setup.sh` posts the password to it, as
+  the invitee would, so the user's password is one they chose.
+- **Port 5180, not Vite's default.** The port is part of the registered
+  `redirect_uri`, so the app pins it with `strictPort`. Vite's own defaults
+  (5173 and up) collide with other dev servers.

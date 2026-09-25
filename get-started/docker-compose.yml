@@ -27,6 +27,18 @@ services:
       memlock: { soft: -1, hard: -1 }
     environment:
       LIBRA_OS_DATABASE_URL: postgresql://libraos:libraos@postgres:5432/libraos?sslmode=disable
+      # apps/personal-assistant: remember facts about each user, per agent.
+      LIBRA_OS_OBSERVATIONAL_MEMORY: "1"
+      # apps/personal-assistant: parse and index uploaded documents so the
+      # assistant can answer from them. Off by default in the kernel.
+      LIBRA_OS_SUPERNOVA_ENABLED: "true"
+    volumes:
+      # apps/personal-assistant: the kernel installs apps from this folder.
+      - ../apps/personal-assistant/libraos-app:/var/nova-os/apps/personal-assistant:ro
+      # Uploaded documents. Without a volume they vanish when the container is
+      # recreated, while their indexed text (in Postgres) stays searchable.
+      - documents:/app/data/nova-os/documents
 
 volumes:
   pgdata:
+  documents:
