@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMemory } from "./api";
+import { Markdown } from "./Markdown";
 
 export function Memory({ onError }: { onError: (e: unknown) => void }) {
   const [memory, setMemory] = useState<string | null>(null);
@@ -12,7 +13,7 @@ export function Memory({ onError }: { onError: (e: unknown) => void }) {
         What I remember <button className="link" onClick={refresh}>refresh</button>
       </h3>
       {memory ? (
-        <pre className="memory">{memory}</pre>
+        <div className="memory"><Markdown text={memory} /></div>
       ) : (
         <p className="muted small">
           Nothing summarized yet. I already use what you've told me recently, in every conversation;

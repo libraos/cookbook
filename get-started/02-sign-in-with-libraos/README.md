@@ -11,6 +11,9 @@ you ──► app (localhost:5173) ──► LibraOS sign-in page ──► back
              app calls /oauth/userinfo with the access token
 ```
 
+![Signed in: the userinfo the kernel verified, and the ID token claims](docs/signed-in.png)
+
+
 ## Run it
 
 You need the local kernel from [`../`](../README.md) running (`docker compose up -d`).

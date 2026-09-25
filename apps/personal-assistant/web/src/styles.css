@@ -37,7 +37,13 @@ header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; pad
 .empty { margin: auto; text-align: center; }
 .msg { white-space: pre-wrap; padding: 10px 14px; border-radius: 12px; max-width: 85%; }
 .msg.user { align-self: flex-end; background: var(--user); }
-.msg.assistant { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); }
+.msg.assistant { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); white-space: normal; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p, .md ul, .md ol { margin: 0 0 8px; }
+.md ul, .md ol { padding-left: 20px; }
+.md h1, .md h2, .md h3 { font-size: 1em; margin: 10px 0 4px; }
+.md code { background: var(--bg); padding: 1px 4px; border-radius: 4px; font-size: 0.92em; }
 .sources { font-size: 12px; }
 .composer { display: flex; gap: 8px; padding: 12px max(24px, calc((100% - 720px) / 2)) 20px; }
 .composer textarea { flex: 1; font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--line); resize: none; }
@@ -46,7 +52,7 @@ header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; pad
 .side section + section { margin-top: 24px; }
 .side h3 { font-size: 13px; margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
 .docs { padding-left: 18px; margin: 8px 0; }
-.memory { white-space: pre-wrap; font: 12px/1.5 inherit; background: var(--bg); padding: 8px; border-radius: 8px; }
+.memory { font-size: 12px; line-height: 1.5; background: var(--bg); padding: 8px; border-radius: 8px; }
 
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto 1fr auto; height: auto; min-height: 100vh; }

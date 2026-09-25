@@ -10,6 +10,12 @@ account and get:
 - **Long-term memory.** Tell it something once, and it still knows it in a new
   conversation.
 
+![The assistant answering from an uploaded document, with what it remembers about the user on the right](docs/documents.png)
+
+A new conversation still knows what you told it in an earlier one:
+
+![A brand-new conversation recalling the user's peanut allergy from long-term memory](docs/memory.png)
+
 ```
 personal-assistant/
 ├── libraos-app/          the LibraOS side: an app with one agent

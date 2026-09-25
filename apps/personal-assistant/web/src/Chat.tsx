@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { chat, getConversation, renameConversation, type Message } from "./api";
+import { Markdown } from "./Markdown";
 
 type Props = {
   conversationId: string | null; // null = a new conversation
@@ -61,7 +62,9 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.role}`}>{m.content}</div>
+          <div key={i} className={`msg ${m.role}`}>
+            {m.role === "assistant" ? <Markdown text={m.content} /> : m.content}
+          </div>
         ))}
         {busy && <div className="msg assistant muted">Thinking…</div>}
         {sources.length > 0 && (
