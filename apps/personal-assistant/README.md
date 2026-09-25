@@ -134,8 +134,8 @@ do them for a normal user:
   events), and the app did at first. But a streamed turn is never written to
   long-term memory, so the next conversation had forgotten everything. We
   checked: after streamed turns the user's `observation_logs` row did not exist;
-  one non-streamed turn created it. The streaming handler never appends to the
-  memory buffer ([libraos#925](https://github.com/libraos/libraos/issues/925)).
+  one non-streamed turn created it. The streaming path doesn't write to the
+  memory buffer yet.
   The app waits for the full reply until that's fixed.
 - **Personal Gmail or calendar.** Connectors are organization-wide, set up by
   an admin; there is no per-user mailbox or calendar a normal user can connect.
@@ -147,8 +147,7 @@ do them for a normal user:
   its indexed text stays searchable, so the assistant would keep answering from
   it. The app offers no delete rather than a delete that doesn't.
 - **Seeing or deleting your memory item by item.** The panel shows the
-  condensed notes; there's no user-facing delete
-  ([libraos#1318](https://github.com/libraos/libraos/issues/1318)).
+  condensed notes; there's no user-facing delete.
 
 ## Gotchas we hit
 
