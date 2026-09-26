@@ -1,0 +1,9 @@
+# The LibraOS side of the personal assistant: one app, one agent.
+# The kernel reads this from $LIBRA_OS_APPS_ROOT/personal-assistant/ (see
+# get-started/docker-compose.yml for the mount) when you install the app.
+name: personal-assistant
+version: 0.1.0
+# Required even though this app ships no database migrations.
+schema_prefix: pa_
+# Must be set explicitly: without it the kernel loads no agents.
+agents: agents

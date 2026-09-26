@@ -1,0 +1,44 @@
+# A local LibraOS kernel for the get-started examples.
+#   cp .env.example .env   # then set a model endpoint
+#   docker compose up -d
+# Kernel: http://localhost:8900   Admin: the email/password in .env
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: libraos
+      POSTGRES_PASSWORD: libraos
+      POSTGRES_DB: libraos
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libraos"]
+      interval: 2s
+      retries: 30
+
+  libraos:
+    image: ghcr.io/libraos/libraos:${LIBRAOS_VERSION:-v0.1.20}
+    depends_on:
+      postgres: { condition: service_healthy }
+    ports: ["${LIBRAOS_PORT:-8900}:8900"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    env_file: .env
+    # The kernel refuses to start under Docker's default 64 KiB memlock cap.
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    environment:
+      LIBRA_OS_DATABASE_URL: postgresql://libraos:libraos@postgres:5432/libraos?sslmode=disable
+      # apps/personal-assistant: remember facts about each user, per agent.
+      LIBRA_OS_OBSERVATIONAL_MEMORY: "1"
+      # apps/personal-assistant: parse and index uploaded documents so the
+      # assistant can answer from them. Off by default in the kernel.
+      LIBRA_OS_SUPERNOVA_ENABLED: "true"
+    volumes:
+      # apps/personal-assistant: the kernel installs apps from this folder.
+      - ../apps/personal-assistant/libraos-app:/var/nova-os/apps/personal-assistant:ro
+      # Uploaded documents. Without a volume they vanish when the container is
+      # recreated, while their indexed text (in Postgres) stays searchable.
+      - documents:/app/data/nova-os/documents
+
+volumes:
+  pgdata:
+  documents:

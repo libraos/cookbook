@@ -1,0 +1,6 @@
+{
+  "name": "libraos-get-started",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" }
+}

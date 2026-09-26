@@ -1,18 +1,39 @@
-# nova-os-cookbook
+# LibraOS cookbook
 
-End-to-end recipes for building partner applications on top of **Libra OS** — the agent runtime served by [`MeganovaAI/nova-os`](https://github.com/MeganovaAI/nova-os) and consumed via the [`nova-os-sdk`](https://github.com/libraos/sdk).
-
-Each recipe is a runnable, self-contained workflow that wires the SDK together with surrounding partner-side code: webhook receivers, sample input documents, structured-output validators, identity passthrough, async-job patterns. Modeled on [`anthropics/claude-cookbooks`](https://github.com/anthropics/claude-cookbooks).
+Runnable examples for building on **LibraOS**, the agent runtime in
+[`libraos/libraos`](https://github.com/libraos/libraos), called directly over
+HTTP or through the [`libraos/sdk`](https://github.com/libraos/sdk) client.
+Modeled on [`anthropics/claude-cookbooks`](https://github.com/anthropics/claude-cookbooks).
 
 ## What lives where
 
 | Repo | Purpose |
 |---|---|
-| [`MeganovaAI/nova-os`](https://github.com/MeganovaAI/nova-os) | Server runtime. Deploy this to host agents. |
-| [`MeganovaAI/nova-os-sdk`](https://github.com/libraos/sdk) | Client SDK + per-resource call-pattern snippets (`messages.create`, `agents.list`, …). The minimal surface a partner needs to call a running Libra OS. |
-| **this repo** | Vertical workflow recipes that compose the SDK with surrounding partner code. Pick by use case, not by API method. |
+| [`libraos/libraos`](https://github.com/libraos/libraos) | The kernel. Deploy this to host agents. |
+| [`libraos/sdk`](https://github.com/libraos/sdk) | Client SDK plus per-resource call snippets (`messages.create`, `agents.list`, …): the minimal surface for calling a running kernel. |
+| **this repo** | Examples that compose the kernel's APIs with the code around them. Pick by what you're building, not by API method. |
 
-If you're trying to learn the SDK surface ("how do I call `messages.create`?"), start in `nova-os-sdk/examples/`. If you're building an application ("how do I extract clauses from contracts?"), start here.
+To learn the SDK surface ("how do I call `messages.create`?"), start in
+[`libraos/sdk/examples`](https://github.com/libraos/sdk/tree/main/examples). To
+build an application, start here.
+
+## Get started
+
+A local kernel in Docker, then the first things to build on it. Start here if
+you're new. See [`get-started/`](get-started/README.md).
+
+| Example | What it shows |
+|---|---|
+| [`get-started/01-first-agent/`](get-started/01-first-agent/) | Create an agent and talk to it, in bash or TypeScript |
+| [`get-started/02-sign-in-with-libraos/`](get-started/02-sign-in-with-libraos/) | A browser app that signs people in with LibraOS (OIDC + PKCE, by hand) |
+
+## Apps
+
+Small but complete applications, each proven against a local kernel.
+
+| App | What it shows |
+|---|---|
+| [`apps/personal-assistant/`](apps/personal-assistant/) | A signed-in user chats with an app's own agent, resumes past conversations, uploads documents it answers from, and is remembered across conversations. Vite + React + TypeScript. |
 
 ## Recipes
 
@@ -35,7 +56,7 @@ Each recipe is the runnable companion to a Libra OS docs use-case guide (linked 
 | [`healthcare/`](healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-end-user identity passthrough for HIPAA-style isolation |
 | [`finance/`](finance/) | 10-K filing diff using the async-job pattern for long documents, with `web_search_config` for live market-data enrichment |
 
-## Common prerequisites
+## Common prerequisites (recipes)
 
 ```bash
 pip install nova-os-sdk
@@ -51,4 +72,4 @@ All sample inputs are **synthetic**. The legaltech MSA, the healthcare clinical 
 
 ## Versioning
 
-Recipes target the latest stable `nova-os-sdk` release. If a recipe depends on a specific server build (e.g., a feature only available in `nova-os:v0.1.7+`), its README will say so.
+Recipes target the latest stable SDK release. If a recipe depends on a specific kernel build (e.g., a feature only available in `v0.1.7+`), its README will say so. The get-started examples and apps pin the kernel image in `get-started/docker-compose.yml`.
