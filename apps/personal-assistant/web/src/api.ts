@@ -23,20 +23,48 @@ export const getMe = async () => json<Me>(await authFetch("/oauth/userinfo"));
 // The kernel does not replay history: send the whole conversation each turn,
 // plus its conversation_id so the turn is saved to the same thread.
 //
-// This waits for the whole reply instead of streaming it. The kernel can
-// stream ("stream": true, server-sent events), but on v0.1.20 a streamed turn
-// is not written to the user's long-term memory. See README "Not yet".
+// With "stream": true the reply comes back as server-sent events, one JSON
+// object per `data:` line, told apart by `type`:
+//   {"type":"text","content":"…"}      a piece of the reply, in order
+//   {"type":"content","content":"…"}   the whole reply once more, at the end
+//   {"type":"error","error":"…"}       the turn failed (a `done` still follows)
+//   {"type":"done","conversation_id":"…","cited_sources":[…], …}
+// Streamed turns are saved and remembered like any other (kernel v0.1.21+).
 export async function chat(
   messages: Message[],
   conversationId: string | null,
+  onText: (textSoFar: string) => void,
 ): Promise<{ text: string; conversationId: string; sources: string[] }> {
   const res = await authFetch(`/v1/apps/${APP}/agents/${AGENT}/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ messages, conversation_id: conversationId ?? undefined }),
+    body: JSON.stringify({ messages, conversation_id: conversationId ?? undefined, stream: true }),
   });
-  const body = await json<{ response: string; conversation_id: string; cited_sources?: string[] }>(res);
-  return { text: body.response, conversationId: body.conversation_id, sources: body.cited_sources ?? [] };
+  if (!res.ok || !res.body) await json(res); // throws with the status
+
+  let text = "";
+  let done: { conversation_id: string; cited_sources?: string[] } | null = null;
+  const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  for (;;) {
+    const { value, done: ended } = await reader.read();
+    if (ended) break;
+    buffer += value;
+    // Events are separated by a blank line; keep any partial one for later.
+    const events = buffer.split("\n\n");
+    buffer = events.pop()!;
+    for (const event of events) {
+      const data = event.split("\n").filter((l) => l.startsWith("data:")).map((l) => l.slice(5).trim()).join("");
+      if (!data) continue;
+      const frame = JSON.parse(data);
+      if (frame.type === "text") onText((text += frame.content));
+      else if (frame.type === "content") onText((text = frame.content)); // authoritative full text
+      else if (frame.type === "error") throw new Error(`chat: ${frame.error}`);
+      else if (frame.type === "done") done = frame;
+    }
+  }
+  if (!done) throw new Error("chat: the stream ended before the reply was complete");
+  return { text, conversationId: done.conversation_id, sources: done.cited_sources ?? [] };
 }
 
 // ── Conversations ───────────────────────────────────────────────────────────
@@ -46,8 +74,8 @@ export const listConversations = async () =>
 export const getConversation = async (id: string) =>
   json<Conversation & { messages: Message[] }>(await authFetch(`/v1/conversations/${id}`));
 
-// The kernel can answer a moment before it has saved a NEW conversation (seen
-// with streaming), so a rename sent straight away may 404. Retry briefly.
+// The kernel can finish a reply a moment before it has saved a NEW
+// conversation, so a rename sent straight away may 404. Retry briefly.
 export async function renameConversation(id: string, title: string): Promise<void> {
   for (let attempt = 0; ; attempt++) {
     const res = await authFetch(`/v1/conversations/${id}`, {
@@ -78,6 +106,12 @@ export async function uploadDocument(file: File): Promise<void> {
   const form = new FormData();
   form.append("file", file);
   await json(await authFetch(`/api/documents/upload/${FOLDER}`, { method: "POST", body: form }));
+}
+
+// Use /rm/, not DELETE /api/documents/file/: both remove the file, but only
+// /rm/ also removes its indexed text, so the assistant stops answering from it.
+export async function deleteDocument(name: string): Promise<void> {
+  await json(await authFetch(`/api/documents/rm/${FOLDER}/${encodeURIComponent(name)}`, { method: "DELETE" }));
 }
 
 // ── Memory ──────────────────────────────────────────────────────────────────

@@ -52,6 +52,8 @@ header { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; pad
 .side section + section { margin-top: 24px; }
 .side h3 { font-size: 13px; margin: 0 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
 .docs { padding-left: 18px; margin: 8px 0; }
+.docs .doc-name { overflow-wrap: anywhere; }
+.docs .link { margin-left: 8px; }
 .memory { font-size: 12px; line-height: 1.5; background: var(--bg); padding: 8px; border-radius: 8px; }
 
 @media (max-width: 900px) {

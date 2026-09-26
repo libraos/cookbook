@@ -3,10 +3,11 @@
 A small but real assistant app on LibraOS. People sign in with their LibraOS
 account and get:
 
-- **Chat** with the app's own agent.
+- **Chat** with the app's own agent. Replies stream in as they're written.
 - **Past conversations**, listed and resumable.
 - **My documents.** Upload files; the assistant answers from them, and only
-  their owner can search them.
+  their owner can search them. Delete one and the assistant stops answering
+  from it.
 - **Long-term memory.** Tell it something once, and it still knows it in a new
   conversation.
 
@@ -32,7 +33,8 @@ normal user, not an admin.
 
 ## Quickstart
 
-1. Start the kernel from [`get-started/`](../../get-started/README.md). Its
+1. Start the kernel (v0.1.21 or newer) from
+   [`get-started/`](../../get-started/README.md). Its
    `docker-compose.yml` already mounts `libraos-app/` into the kernel and
    switches on memory and document indexing. In `get-started/.env`, set
    `PA_DEMO_PASSWORD` (12+ characters) and check that `LIBRA_OS_OIDC_CLIENTS`
@@ -62,7 +64,8 @@ normal user, not an admin.
 
 Try this: tell it something about yourself, then upload a file (`.txt`, `.md`,
 `.pdf` or `.docx`) and ask about it in a **New chat**. Start a third chat and
-ask what it knows about you.
+ask what it knows about you. Then **delete** the file and ask again in a new
+chat.
 
 ## How it works
 
@@ -95,12 +98,13 @@ would behind one reverse proxy in production.
 | Feature | Call |
 |---|---|
 | Who am I | `GET /oauth/userinfo` |
-| Chat | `POST /v1/apps/personal-assistant/agents/assistant/chat` with `{messages, conversation_id}` |
+| Chat | `POST /v1/apps/personal-assistant/agents/assistant/chat` with `{messages, conversation_id, stream: true}`; the reply comes back as server-sent events |
 | Conversation list | `GET /v1/conversations?agent=assistant` |
 | Resume | `GET /v1/conversations/:id` for the messages, then keep chatting with that `conversation_id` |
 | Title / delete | `PATCH /v1/conversations/:id {title}` / `DELETE /v1/conversations/:id` |
 | Upload | `POST /api/documents/upload/my-documents`, multipart field `file` |
 | List documents | `GET /api/documents/tree/my-documents` |
+| Delete a document | `DELETE /api/documents/rm/my-documents/<name>` |
 | Memory | `GET /v1/managed/memory?agent_id=assistant` |
 
 Things worth knowing:
@@ -109,6 +113,15 @@ Things worth knowing:
   history. `conversation_id` only says where to save the turn. On resume, the
   app loads the stored messages and sends them all with the next question
   ([`Chat.tsx`](web/src/Chat.tsx)).
+- **Replies stream.** With `"stream": true` the kernel answers with
+  server-sent events, one JSON object per `data:` line, told apart by `type`:
+  `text` frames carry the next piece of the reply, one `content` frame repeats
+  the whole reply at the end, and `done` carries `conversation_id` and
+  `cited_sources`. A failed turn sends `{"type":"error","error":"…"}` before
+  `done`. [`api.ts`](web/src/api.ts) reads them with `fetch` and a stream
+  reader (not `EventSource`, which can't `POST` or send a bearer token), and
+  the chat pane renders the Markdown as it grows. Streamed turns are saved and
+  remembered like any other.
 - **New conversations are untitled.** The app names each one after its first
   question with a `PATCH`.
 - **Uploads are private by construction.** For a normal user the kernel stores
@@ -120,6 +133,11 @@ Things worth knowing:
   later conversation. After roughly 8,000 tokens it condenses them into notes,
   which is what the **What I remember** panel shows. Before then the panel is
   empty, but recall already works.
+- **Deleting a document removes its indexed text too**, so a new conversation
+  can no longer answer from it. Use `/api/documents/rm/…`: the kernel also has
+  `DELETE /api/documents/file/…`, which removes the file but leaves its indexed
+  text searchable. Deleting a file doesn't touch memory, though. If you asked
+  about it in a chat, the assistant may still recall that answer (see below).
 - **Document search is keyword (lexical) search** on this setup: the stock
   compose has no vector database, so the kernel falls back to Postgres full-text
   search. Answers report `"grounding": "degraded_retrieval"`. Ask with words that
@@ -127,27 +145,21 @@ Things worth knowing:
 
 ## Not yet
 
-Left out on purpose, because today's kernel (v0.1.20) can't do them, or can't
+Left out on purpose, because today's kernel (v0.1.21) can't do them, or can't
 do them for a normal user:
 
-- **Streaming replies.** The kernel streams (`"stream": true`, server-sent
-  events), and the app did at first. But a streamed turn is never written to
-  long-term memory, so the next conversation had forgotten everything. We
-  checked: after streamed turns the user's `observation_logs` row did not exist;
-  one non-streamed turn created it. The streaming path doesn't write to the
-  memory buffer yet.
-  The app waits for the full reply until that's fixed.
 - **Personal Gmail or calendar.** Connectors are organization-wide, set up by
   an admin; there is no per-user mailbox or calendar a normal user can connect.
 - **Acting for you, with your approval.** Actions with side effects go through
   the kernel's approval queue, and only admins can approve. A user can't
   approve their own assistant's action, so this assistant only talks.
 - **Scheduled tasks or a daily briefing.** The kernel has no scheduler.
-- **Deleting a document.** `DELETE /api/documents/file/…` removes the file, but
-  its indexed text stays searchable, so the assistant would keep answering from
-  it. The app offers no delete rather than a delete that doesn't.
 - **Seeing or deleting your memory item by item.** The panel shows the
-  condensed notes; there's no user-facing delete.
+  condensed notes; there's no user-facing delete. That includes what you
+  learned from a document you have since deleted: memory keeps the
+  conversations, not the files, so an answer the assistant gave you before the
+  delete can come back from memory afterwards (with no **From:** line, because
+  no document was searched).
 
 ## Gotchas we hit
 
@@ -159,9 +171,17 @@ do them for a normal user:
   (`agent_id`) and memory (`agent_id=`) know this agent as plain `assistant`,
   not `personal-assistant/assistant`, so another agent called `assistant` on the
   same kernel would show up in the same places. Pick distinctive ids.
-- **A just-created conversation can 404 for a moment.** With streaming we saw
-  `PATCH /v1/conversations/:id` return 404 when sent straight after the reply,
-  and succeed a moment later. `renameConversation()` retries briefly.
+- **A just-created conversation can 404 for a moment.** On an earlier kernel
+  we saw `PATCH /v1/conversations/:id` return 404 when sent straight after a
+  streamed reply, and succeed a moment later. `renameConversation()` retries
+  briefly.
+- **Two document deletes, one of them half a delete.** `DELETE
+  /api/documents/file/…` removes the file but not its indexed text, so the
+  assistant keeps answering from a file the list no longer shows.
+  `DELETE /api/documents/rm/…` removes both; the app uses that.
+- **Ignore the `content` frame's text if you've kept the `text` frames.** It
+  repeats the whole reply, so appending it too doubles the answer. The app
+  treats it as the final text and replaces what it built up.
 - **Retrieved documents carry their storage path.** The kernel hands each
   retrieved chunk to the model labelled `Source: users/<id>/my-documents/…`, and
   models like to repeat it. [`assistant.md`](libraos-app/agents/assistant.md)
