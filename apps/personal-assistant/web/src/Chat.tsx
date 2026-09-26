@@ -14,6 +14,7 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [sources, setSources] = useState<string[]>([]);
+  const [partial, setPartial] = useState(""); // the reply so far, while it streams
   const bottom = useRef<HTMLDivElement>(null);
 
   // Resuming: the kernel stored every turn, so load them and carry on.
@@ -24,7 +25,7 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
       .catch(onError);
   }, [conversationId, onError]);
 
-  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [messages, busy]);
+  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [messages, busy, partial]);
 
   async function send() {
     const text = draft.trim();
@@ -35,7 +36,7 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
     setSources([]);
     setBusy(true);
     try {
-      const reply = await chat(history, id);
+      const reply = await chat(history, id, setPartial);
       setMessages([...history, { role: "assistant", content: reply.text }]);
       setSources(reply.sources);
       if (!id) {
@@ -48,6 +49,7 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
     } catch (e) {
       onError(e);
     } finally {
+      setPartial("");
       setBusy(false);
     }
   }
@@ -66,7 +68,9 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
             {m.role === "assistant" ? <Markdown text={m.content} /> : m.content}
           </div>
         ))}
-        {busy && <div className="msg assistant muted">Thinking…</div>}
+        {busy && (partial
+          ? <div className="msg assistant streaming"><Markdown text={partial} /></div>
+          : <div className="msg assistant muted">Thinking…</div>)}
         {sources.length > 0 && (
           <div className="sources muted">From: {sources.map((s) => s.split("/").pop()).join(", ")}</div>
         )}
