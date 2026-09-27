@@ -32,6 +32,8 @@ services:
       # apps/personal-assistant: parse and index uploaded documents so the
       # assistant can answer from them. Off by default in the kernel.
       LIBRA_OS_SUPERNOVA_ENABLED: "true"
+      # apps/digital-marketing-team: durable autonomous mission execution.
+      LIBRA_OS_WORKFLOWS_ENABLED: "true"
     volumes:
       # apps/personal-assistant: the kernel installs apps from this folder.
       - ../apps/personal-assistant/libraos-app:/var/nova-os/apps/personal-assistant:ro

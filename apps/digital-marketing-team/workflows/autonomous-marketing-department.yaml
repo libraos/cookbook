@@ -1,0 +1,56 @@
+name: autonomous-marketing-department
+version: 1
+entrypoint:
+  employee: head-of-marketing
+  input: one_natural_language_mission
+
+runtime_contract:
+  planner:
+    creates:
+      - normalized_mission
+      - mission_specific_employees
+      - atomic_tasks
+      - dependency_graph
+      - genuine_decision_gates
+    team_size_guidance: 4-6
+    fixed_specialist_roster: false
+
+  scheduler:
+    ready_when: all_dependencies_completed
+    max_concurrency: 3
+    checkpoint_each_output: true
+    retry_limit: 1
+    noncritical_failure: continue_with_visible_omission
+
+  handoff:
+    transport: structured_output_objects
+    raw_chat_history: false
+    preserve:
+      - task_owner
+      - sources
+      - input_output_refs
+
+  approval:
+    ask_only_for:
+      - explicitly_reserved_executive_decision
+      - external_publication
+      - irreversible_change
+      - spend_commitment
+    blocks_only_dependent_tasks: true
+
+  synthesis:
+    owner: generated_head_of_marketing
+    output: professional_markdown_report
+    attribution: derived_from_runtime_records
+    sources: derived_from_task_outputs
+
+ui_contract:
+  dispatch_calls_after_submit: 0
+  allowed_write_after_submit: resolve_emitted_decision
+  progress_source: durable_runtime_events
+  fake_timers_or_progress: forbidden
+
+integrations:
+  knowledge: native_libraos
+  mcp: optional_when_materially_useful
+  gbrain: not_required
