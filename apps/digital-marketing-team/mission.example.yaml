@@ -1,0 +1,18 @@
+mission:
+  title: LibraOS Developer Launch Campaign
+  objective: >-
+    Create a 14-day developer marketing campaign for LibraOS. Target AI
+    developers and aim for 500 qualified signups. Produce the strategy,
+    channel plan, launch examples, developer messaging, KPI model, and final
+    report. Ask me to approve the positioning before it is used in launch
+    drafts. Do not publish anything.
+  submitted_to: head-of-marketing
+  constraints:
+    - public_actions_require_approval
+    - use_native_libraos_capabilities
+    - preserve_source_attribution
+  expected_behavior:
+    team: chosen_by_runtime
+    task_graph: generated_by_runtime
+    concurrency: 3
+    final_output: one_attributed_report
