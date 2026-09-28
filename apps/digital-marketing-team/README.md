@@ -73,6 +73,10 @@ DM_DEMO_PASSWORD='choose-a-12-character-password' \
   apps/digital-marketing-team/scripts/setup.sh
 ```
 
+The setup script also ingests `fixtures/libraos-product-brief.md` into the
+native LibraOS `default` knowledge collection. Research employees cite that
+runtime source directly; no GBrain or mandatory MCP dependency is involved.
+
 Then run the browser app:
 
 ```bash
@@ -112,6 +116,7 @@ the stream replays the stored event log before following live work.
 digital-marketing-team/
 ├── README.md
 ├── mission.example.yaml
+├── fixtures/libraos-product-brief.md
 ├── workflows/autonomous-marketing-department.yaml
 ├── scripts/setup.sh
 └── web/
