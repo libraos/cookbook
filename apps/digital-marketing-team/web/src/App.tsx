@@ -16,6 +16,53 @@ type TaskStatus = "planned" | "waiting_dependency" | "ready" | "running" | "wait
 type Activity = { sequence: number; type: string; text: string };
 
 const example = "Create a 14-day developer marketing campaign for LibraOS. Target AI developers and aim for 500 qualified signups. Produce the strategy, channel plan, launch examples, developer messaging, KPI model, and final report. Ask me to approve the positioning before it is used in launch drafts. Do not publish anything.";
+const activeMissionKey = "libraos.digital-marketing.active-mission";
+
+type ActiveMission = { jobID: string; objective: string };
+
+function loadActiveMission(): ActiveMission | null {
+  let stored: ActiveMission | null = null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(activeMissionKey) ?? "null") as Partial<ActiveMission> | null;
+    stored = parsed?.jobID && parsed.objective ? { jobID: parsed.jobID, objective: parsed.objective } : null;
+  } catch {
+    sessionStorage.removeItem(activeMissionKey);
+  }
+  const requestedJobID = new URL(location.href).searchParams.get("job");
+  if (requestedJobID?.startsWith("job_")) {
+    const requested = { jobID: requestedJobID, objective: stored?.jobID === requestedJobID ? stored.objective : "Recovering saved mission…" };
+    sessionStorage.setItem(activeMissionKey, JSON.stringify(requested));
+    return requested;
+  }
+  return stored;
+}
+
+function saveActiveMission(mission: ActiveMission | null) {
+  if (mission) sessionStorage.setItem(activeMissionKey, JSON.stringify(mission));
+  else sessionStorage.removeItem(activeMissionKey);
+}
+
+function downloadReport(report: string, title = "libraos-marketing-report") {
+  const filename = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "libraos-marketing-report";
+  const url = URL.createObjectURL(new Blob([report], { type: "text/markdown;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${filename}.md`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function showMissionInURL(jobID: string | null) {
+  const url = new URL(location.href);
+  if (jobID) url.searchParams.set("job", jobID);
+  else url.searchParams.delete("job");
+  history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 function value<T>(event: MissionEvent, key: string): T | undefined {
   return event.metadata?.[key] as T | undefined;
@@ -40,12 +87,13 @@ function eventText(event: MissionEvent): string | null {
 }
 
 export function App({ initialError }: { initialError: string | null }) {
+  const [restoredMission] = useState(loadActiveMission);
   const [signedIn, setSignedIn] = useState(isSignedIn());
   const [error, setError] = useState(initialError);
-  const [objective, setObjective] = useState(example);
-  const [submittedObjective, setSubmittedObjective] = useState("");
-  const [jobID, setJobID] = useState<string | null>(null);
-  const [status, setStatus] = useState<"empty" | "submitting" | "planning" | "running" | "waiting_approval" | "completed" | "failed">("empty");
+  const [objective, setObjective] = useState(restoredMission?.objective ?? example);
+  const [submittedObjective, setSubmittedObjective] = useState(restoredMission?.objective ?? "");
+  const [jobID, setJobID] = useState<string | null>(restoredMission?.jobID ?? null);
+  const [status, setStatus] = useState<"empty" | "submitting" | "planning" | "running" | "waiting_approval" | "completed" | "failed">(restoredMission ? "planning" : "empty");
   const [plan, setPlan] = useState<MissionPlan | null>(null);
   const [tasks, setTasks] = useState<Record<string, TaskStatus>>({});
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -54,8 +102,11 @@ export function App({ initialError }: { initialError: string | null }) {
   const [instruction, setInstruction] = useState("");
   const [report, setReport] = useState("");
   const [reportOpen, setReportOpen] = useState(false);
-	const [sourceCount, setSourceCount] = useState(0);
+  const [sourceCount, setSourceCount] = useState(0);
   const streamAbort = useRef<AbortController | null>(null);
+  const seenSequences = useRef(new Set<number>());
+  const jobIDRef = useRef(jobID);
+  jobIDRef.current = jobID;
 
   const onError = useCallback((cause: unknown) => {
     if (cause instanceof SignedOut) setSignedIn(false);
@@ -66,9 +117,18 @@ export function App({ initialError }: { initialError: string | null }) {
   }, []);
 
   const applyEvent = useCallback((event: MissionEvent, sequence: number) => {
+    if (seenSequences.current.has(sequence)) return;
+    seenSequences.current.add(sequence);
     const text = eventText(event);
     if (text) setActivities((items) => [...items, { sequence, type: event.type, text }].slice(-60));
-    if (event.type === "mission.created") setStatus("planning");
+    if (event.type === "mission.created") {
+      setStatus("planning");
+      if (event.content) {
+        setObjective(event.content);
+        setSubmittedObjective(event.content);
+        if (jobIDRef.current) saveActiveMission({ jobID: jobIDRef.current, objective: event.content });
+      }
+    }
     if (event.type === "mission.planned") {
       const nextPlan = value<MissionPlan>(event, "plan");
       if (nextPlan) {
@@ -98,11 +158,11 @@ export function App({ initialError }: { initialError: string | null }) {
       setInstruction("");
       setStatus("running");
     }
-		if (event.type === "response_complete") {
-			setReport(event.content ?? "");
-			setStatus("completed");
-		}
-		if (event.type === "report.completed") setSourceCount(value<number>(event, "source_count") ?? 0);
+    if (event.type === "response_complete") {
+      setReport(event.content ?? "");
+      setStatus("completed");
+    }
+    if (event.type === "report.completed") setSourceCount(value<number>(event, "source_count") ?? 0);
     if (event.type === "error") {
       setError(event.content ?? "Mission failed");
       setStatus("failed");
@@ -126,8 +186,12 @@ export function App({ initialError }: { initialError: string | null }) {
     setError(null);
     setStatus("submitting");
     setSubmittedObjective(message);
+    seenSequences.current.clear();
     try {
-      setJobID(await createMission(message));
+      const nextJobID = await createMission(message);
+      saveActiveMission({ jobID: nextJobID, objective: message });
+      showMissionInURL(nextJobID);
+      setJobID(nextJobID);
       setStatus("planning");
     } catch (cause) {
       onError(cause);
@@ -148,6 +212,9 @@ export function App({ initialError }: { initialError: string | null }) {
 
   function reset() {
     streamAbort.current?.abort();
+    seenSequences.current.clear();
+    saveActiveMission(null);
+    showMissionInURL(null);
     setJobID(null);
     setSubmittedObjective("");
     setPlan(null);
@@ -155,7 +222,7 @@ export function App({ initialError }: { initialError: string | null }) {
     setActivities([]);
     setDecision(null);
     setReport("");
-		setSourceCount(0);
+    setSourceCount(0);
     setReportOpen(false);
     setError(null);
     setStatus("empty");
@@ -208,7 +275,7 @@ export function App({ initialError }: { initialError: string | null }) {
               <span className="completion-check">✓</span>
               <div><p className="eyebrow">Mission complete</p><h2>{plan?.title}</h2>
                 <p>{plan?.employees.length} employees · {completed} tasks completed · {sourceCount} sources used</p>
-                <div className="actions"><button className="primary" onClick={() => setReportOpen(true)}>Open report</button><button onClick={reset}>New mission</button></div>
+                <div className="actions"><button className="primary" onClick={() => setReportOpen(true)}>Open report</button><button onClick={() => downloadReport(report, plan?.title)}>Download report</button><button onClick={reset}>New mission</button></div>
               </div>
             </article>}
             {error && <div className="error-banner">{error}</div>}
@@ -281,7 +348,7 @@ function TeamSkeleton() {
 
 function ReportView({ report, plan, onClose }: { report: string; plan: MissionPlan | null; onClose: () => void }) {
   const sections = useMemo(() => report.split("\n").filter((line) => line.startsWith("## ")).map((line) => line.slice(3)), [report]);
-  return <div className="report-shell"><header className="topbar"><div className="brand"><span className="brand-mark">L</span><span>LibraOS</span><span className="cookbook">Deliverable</span></div><button onClick={onClose}>← Back to mission</button></header><main className="report-layout"><aside className="toc"><p className="panel-label">Contents</p>{sections.map((section) => <span key={section}>{section}</span>)}</aside><article className="report-document"><Markdown text={report} /></article><aside className="contributors"><p className="panel-label">Contributors</p>{plan?.employees.map((employee) => <div key={employee.id}><span className="mini-avatar">{employee.name.slice(0, 1)}</span><p><strong>{employee.name}</strong><small>{employee.role}</small></p></div>)}</aside></main></div>;
+  return <div className="report-shell"><header className="topbar"><div className="brand"><span className="brand-mark">L</span><span>LibraOS</span><span className="cookbook">Deliverable</span></div><div className="report-actions"><button className="primary" onClick={() => downloadReport(report, plan?.title)}>Download report</button><button onClick={onClose}>← Back to mission</button></div></header><main className="report-layout"><aside className="toc"><p className="panel-label">Contents</p>{sections.map((section) => <span key={section}>{section}</span>)}</aside><article className="report-document"><Markdown text={report} /></article><aside className="contributors"><p className="panel-label">Contributors</p>{plan?.employees.map((employee) => <div key={employee.id}><span className="mini-avatar">{employee.name.slice(0, 1)}</span><p><strong>{employee.name}</strong><small>{employee.role}</small></p></div>)}</aside></main></div>;
 }
 
 function statusLabel(status: string) {
