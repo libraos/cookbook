@@ -1,0 +1,9 @@
+{
+  "name": "@libraos-cookbook/mission-client",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --test src/*.test.ts"
+  }
+}

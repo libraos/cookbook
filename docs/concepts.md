@@ -30,6 +30,7 @@ skills      what an agent can do                                 search_web, fet
 | [`recipes/`](../recipes/) | One agent solving one task, each paired with a docs guide |
 | [`packs/`](../packs/) | Reusable teams and their missions |
 | [`apps/`](../apps/) | Complete applications that run agents or teams |
+| [`shared/`](../shared/) | Code apps share, such as the [mission client](../shared/mission-client/) |
 
 ## Missions
 

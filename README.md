@@ -19,7 +19,7 @@ build an application, start here.
 
 ## How this repo is organized
 
-[Skills, agents, packs, missions and apps](docs/concepts.md): what each layer is and where it lives. Single-agent recipes are in [`recipes/`](recipes/), teams in [`packs/`](packs/), applications in [`apps/`](apps/).
+[Skills, agents, packs, missions and apps](docs/concepts.md): what each layer is and where it lives. Single-agent recipes are in [`recipes/`](recipes/), teams in [`packs/`](packs/), applications in [`apps/`](apps/), and code shared between apps in [`shared/`](shared/).
 
 ## Get started
 
@@ -38,6 +38,7 @@ Small but complete applications, each proven against a local kernel.
 | App | What it shows |
 |---|---|
 | [`apps/digital-marketing-team/`](apps/digital-marketing-team/) | One mission to a Head of Marketing becomes a small department: a task graph, approval gates and one attributed report, followed live over a replayable event stream. Runs the [`marketing-team`](packs/marketing-team/) pack. |
+| [`apps/mission-console/`](apps/mission-console/) | Run any pack's mission from one console: pick the mission, follow the team and plan, answer decisions, read the report. Built on the shared [mission client](shared/mission-client/). |
 | [`apps/personal-assistant/`](apps/personal-assistant/) | A signed-in user chats with an app's own agent, resumes past conversations, uploads documents it answers from, and is remembered across conversations. Vite + React + TypeScript. |
 
 ## Packs
