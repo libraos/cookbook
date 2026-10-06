@@ -1,0 +1,31 @@
+# Marketing team pack: the autonomous digital marketing department.
+#
+# Status: contract. Today the kernel runs this team through its built-in
+# `head-of-marketing` mission engine, whose prompts and limits are compiled in.
+# libraos/libraos#1660 makes the engine load mission templates from packs; until
+# then this file and missions/ describe the team, and apps/digital-marketing-team
+# runs it unchanged.
+name: marketing-team
+display_name: Digital Marketing Team
+version: 0.1.0
+description: >
+  A Head of Marketing turns one natural-language mission into a small
+  department, a task graph and approval gates, then synthesizes one
+  attributed report. Nothing is published without approval.
+
+agents:
+  # Built into the kernel today; becomes a regular agent file with #1660.
+  director: head-of-marketing
+
+knowledge:
+  collections:
+    - id: default
+      source: knowledge/libraos-product-brief.md
+
+missions:
+  - id: autonomous-marketing-department
+    contract: missions/autonomous-marketing-department.yaml
+    example: missions/autonomous-marketing-department.example.yaml
+
+apps:
+  - ../../apps/digital-marketing-team
