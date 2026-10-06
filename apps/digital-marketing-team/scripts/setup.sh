@@ -27,7 +27,7 @@ else
   echo "user: created $EMAIL"
 fi
 
-BRIEF="$(cd .. && pwd)/fixtures/libraos-product-brief.md"
+BRIEF="$(cd ../../../packs/marketing-team/knowledge && pwd)/libraos-product-brief.md"
 INGEST_BODY=$(python3 - "$BRIEF" <<'PY'
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])

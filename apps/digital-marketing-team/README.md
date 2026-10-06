@@ -73,7 +73,7 @@ DM_DEMO_PASSWORD='choose-a-12-character-password' \
   apps/digital-marketing-team/scripts/setup.sh
 ```
 
-The setup script also ingests `fixtures/libraos-product-brief.md` into the
+The setup script also ingests [`packs/marketing-team/knowledge/libraos-product-brief.md`](../../packs/marketing-team/knowledge/libraos-product-brief.md) into the
 native LibraOS `default` knowledge collection. Research employees cite that
 runtime source directly; no GBrain or mandatory MCP dependency is involved.
 
@@ -115,9 +115,6 @@ the stream replays the stored event log before following live work.
 ```text
 digital-marketing-team/
 ├── README.md
-├── mission.example.yaml
-├── fixtures/libraos-product-brief.md
-├── workflows/autonomous-marketing-department.yaml
 ├── scripts/setup.sh
 └── web/
     ├── src/api.ts       one mission call, replayable stream, decision call
@@ -125,7 +122,11 @@ digital-marketing-team/
     └── src/styles.css   calm responsive presentation
 ```
 
-The workflow YAML documents the public recipe. It is not a second scheduler;
+The team itself (mission contract, example mission and knowledge) lives in the
+[`marketing-team` pack](../../packs/marketing-team/): see
+[`missions/autonomous-marketing-department.yaml`](../../packs/marketing-team/missions/autonomous-marketing-department.yaml)
+and its [example input](../../packs/marketing-team/missions/autonomous-marketing-department.example.yaml).
+The mission YAML documents the contract. It is not a second scheduler;
 LibraOS core remains the source of execution truth.
 
 ## Product boundary
