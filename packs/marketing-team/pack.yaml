@@ -29,3 +29,4 @@ missions:
 
 apps:
   - ../../apps/digital-marketing-team
+  - ../../apps/mission-console
