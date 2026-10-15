@@ -11,14 +11,14 @@ End-to-end partner-side script:
 
 Async is the right fit because the analysis takes 60-180 seconds — well past
 HTTP timeouts on most reverse proxies. The pattern generalises to any
-long-running Libra OS workload (multi-document research, full-corpus risk
+long-running LibraOS workload (multi-document research, full-corpus risk
 review, multi-step plan execution).
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
 
 Run::
 
@@ -32,7 +32,9 @@ import json
 import os
 from pathlib import Path
 
-from nova_os import Client
+import httpx
+
+from libraos import Client
 
 
 DIFF_SCHEMA: dict = {
@@ -103,8 +105,8 @@ SAMPLE_2026 = Path(__file__).with_name("sample_10k_2026.txt")
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     fy2025 = SAMPLE_2025.read_text(encoding="utf-8")
     fy2026 = SAMPLE_2026.read_text(encoding="utf-8")
@@ -135,7 +137,7 @@ async def main() -> None:
                 "identifies material changes by analyst-relevant category, "
                 "and cites live web sources for context where relevant."
             ),
-            output_type={"schema": DIFF_SCHEMA, "violation_mode": "repair"},
+            output_type={"schema_inline": DIFF_SCHEMA, "on_violation": "repair"},
             web_search_config={
                 "enabled": True,
                 "max_calls_per_run": 5,
@@ -151,42 +153,51 @@ async def main() -> None:
             ),
         )
 
-        # 2. Kick off the async job. The job_input is whatever payload the
-        #    agent expects — here, the two excerpts plus the ticker hint.
-        job = await c.jobs.create(
-            agent_id="filing-analyst",
-            job_input={
-                "ticker": "ACME",
-                "comparison_period": "FY2025 vs FY2026",
-                "fy2025_item_1a": fy2025,
-                "fy2026_item_1a": fy2026,
-            },
-            metadata={"agent_id": "filing-analyst"},
-            idempotency_key="acme-fy26-diff-v1",
-        )
-        print(f"Submitted job: {job.id}")
+        # 2. Kick off the async job: POST /agents/v1/{agent}/jobs. It is called
+        #    directly here because the SDK's jobs resource targets a route the
+        #    server does not serve yet (libraos/libraos#1708).
+        payload = {
+            "ticker": "ACME",
+            "comparison_period": "FY2025 vs FY2026",
+            "fy2025_item_1a": fy2025,
+            "fy2026_item_1a": fy2026,
+        }
+        jobs_path = "/agents/v1/filing-analyst/jobs"
+        async with httpx.AsyncClient(
+            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=30
+        ) as http:
+            r = await http.post(
+                jobs_path,
+                json={"message": json.dumps(payload)},
+                # Re-submitting with the same key returns the same job.
+                headers={"Idempotency-Key": "acme-fy26-diff-v1"},
+            )
+            r.raise_for_status()
+            job_id = r.json()["job_id"]
+            print(f"Submitted job: {job_id}")
 
-        # 3. Poll until complete. Production code should cap polling at a
-        #    sensible budget and surface intermediate progress to the UI.
-        for attempt in range(60):  # 60 * 5s = 5 min ceiling
-            status = await c.jobs.get(job.id)
-            print(f"  [{attempt:>2}] status={status.status} progress={status.progress!r}")
-            if status.status in ("complete", "failed", "cancelled"):
-                break
-            await asyncio.sleep(5)
-        else:
-            print("Polling budget exhausted — cancelling.")
-            await c.jobs.cancel(job.id)
-            return
+            # 3. Poll until it finishes. Production code should cap polling at a
+            #    sensible budget and surface progress to the UI (or follow
+            #    GET {jobs_path}/{job_id}/stream instead of polling).
+            for attempt in range(60):  # 60 * 5s = 5 min ceiling
+                job = (await http.get(f"{jobs_path}/{job_id}")).json()
+                print(f"  [{attempt:>2}] status={job['status']}")
+                if job["status"] in ("done", "failed", "cancelled"):
+                    break
+                await asyncio.sleep(5)
+            else:
+                print("Polling budget exhausted — cancelling.")
+                await http.delete(f"{jobs_path}/{job_id}")
+                return
 
-        if status.status != "complete":
-            print(f"Job did not complete cleanly: status={status.status} error={status.error!r}")
+        if job["status"] != "done":
+            print(f"Job did not complete cleanly: status={job['status']} error={job.get('error')!r}")
             return
 
         # 4. Print the validated diff.
         print()
         print("Material changes:")
-        print(json.dumps(status.result, indent=2))
+        print(json.dumps(json.loads(job["result"]), indent=2))
 
         # 5. Optional cleanup.
         await c.agents.delete("filing-analyst")

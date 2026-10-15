@@ -4,21 +4,21 @@ End-to-end partner-side script:
     1. Creates a `legal-clause-extractor` employee with a model cascade
        (Opus answer, Flash skill) and a Mode B custom tool that the agent
        can call to look up precedent in the partner's own clause DB.
-    2. Submits an MSA text. Libra OS routes it through the agent, which
+    2. Submits an MSA text. LibraOS routes it through the agent, which
        extracts clauses, calls back to the precedent-lookup tool one or
        more times, and returns a structured JSON object.
     3. Pretty-prints the validated structured output.
 
-Pair with `webhook_server.py` (FastAPI) running on `${NOVA_CB_URL}` so the
+Pair with `webhook_server.py` (FastAPI) running on `${LIBRA_OS_CB_URL}` so the
 precedent-lookup tool callback has somewhere to land.
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
-    export NOVA_CB_URL=https://partner.example/nova/cb
-    export NOVA_CB_SECRET=<your webhook secret>
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
+    export LIBRA_OS_CB_URL=https://partner.example/nova/cb
+    export LIBRA_OS_CB_SECRET=<your webhook secret>
 
 Run::
 
@@ -32,7 +32,7 @@ import json
 import os
 from pathlib import Path
 
-from nova_os import Client
+from libraos import Client
 
 
 CLAUSE_OUTPUT_SCHEMA: dict = {
@@ -99,7 +99,7 @@ CUSTOM_TOOLS: list[dict] = [
             },
             "additionalProperties": False,
         },
-        "callback_url": os.environ.get("NOVA_CB_URL", "https://partner.example/nova/cb"),
+        "callback_url": os.environ.get("LIBRA_OS_CB_URL", "https://partner.example/nova/cb"),
     },
 ]
 
@@ -108,12 +108,13 @@ SAMPLE_MSA_PATH = Path(__file__).with_name("sample_msa.txt")
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     msa_text = SAMPLE_MSA_PATH.read_text(encoding="utf-8")
 
-    async with Client(base_url=base_url, api_key=api_key) as c:
+    # Clause extraction over a whole agreement can take minutes.
+    async with Client(base_url=base_url, api_key=api_key, timeout=300) as c:
         # 1. Create the digital employee with a multi-tier model cascade.
         await c.employees.create(
             id="contracts-reviewer",
@@ -140,7 +141,7 @@ async def main() -> None:
                 "Extracts clauses from contract text into a structured JSON "
                 "object, flagging risky phrasings against precedent."
             ),
-            output_type={"schema": CLAUSE_OUTPUT_SCHEMA, "violation_mode": "repair"},
+            output_type={"schema_inline": CLAUSE_OUTPUT_SCHEMA, "on_violation": "repair"},
             custom_tools=CUSTOM_TOOLS,
         )
 
@@ -167,7 +168,7 @@ async def main() -> None:
 
         # 4. The reply is validated against CLAUSE_OUTPUT_SCHEMA before return.
         #    Partners can json.loads it directly without re-parsing free text.
-        structured = resp.structured_output if hasattr(resp, "structured_output") else resp
+        structured = json.loads(resp.text)
         print("Extracted clauses:")
         print(json.dumps(structured, indent=2))
 

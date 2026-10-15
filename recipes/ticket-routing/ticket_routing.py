@@ -11,13 +11,13 @@ End-to-end partner-side script:
 
 The prose companion (decision criteria, taxonomy design, hierarchical
 classification for large taxonomies, few-shot via a bound collection) lives in
-the Libra OS docs: https://docs.meganova.ai → Libra OS → Use Cases → Ticket Routing.
+the LibraOS docs: https://docs.meganova.ai → LibraOS → Use Cases → Ticket Routing.
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
 
 Run::
 
@@ -31,10 +31,10 @@ import json
 import os
 from pathlib import Path
 
-from nova_os import Client
+from libraos import Client
 
 
-# The contract every classification is validated against. `violation_mode=repair`
+# The contract every classification is validated against. `on_violation=repair`
 # re-prompts the model once with the schema in the system prompt if its first
 # reply doesn't conform — cheaper than a 422 your integration has to handle.
 INTENT_SCHEMA: dict = {
@@ -72,8 +72,8 @@ def load_labelled() -> list[dict]:
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
         # 1. Digital employee. Classification only needs the fast skill tier.
@@ -95,7 +95,7 @@ async def main() -> None:
             owner_employee="support-desk",
             brain=False,
             description="Classifies a support ticket into a single primary intent label.",
-            output_type={"schema": INTENT_SCHEMA, "violation_mode": "repair"},
+            output_type={"schema_inline": INTENT_SCHEMA, "on_violation": "repair"},
             instructions=(
                 "You are a support-ticket classifier. Read the ticket and identify "
                 "its primary intent. Always write your reasoning before choosing a "
@@ -113,7 +113,7 @@ async def main() -> None:
                 messages=[{"role": "user", "content": item["ticket"]}],
                 metadata={"agent_id": "ticket-router"},
             )
-            verdict = resp.structured_output if hasattr(resp, "structured_output") else resp
+            verdict = json.loads(resp.text)
             got = verdict["intent"]
             ok = got == item["expected"]
             correct += ok

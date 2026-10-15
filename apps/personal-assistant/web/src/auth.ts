@@ -2,7 +2,7 @@
 // version with explanations is get-started/02-sign-in-with-libraos; this file
 // adds what a longer-lived app needs: refresh tokens and a fetch wrapper.
 
-const CLIENT_ID = import.meta.env.VITE_LIBRAOS_CLIENT_ID ?? "personal-assistant";
+const CLIENT_ID = import.meta.env.VITE_LIBRA_OS_CLIENT_ID ?? "personal-assistant";
 const REDIRECT_URI = `${location.origin}/callback`;
 
 type Tokens = { access_token: string; refresh_token?: string };

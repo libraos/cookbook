@@ -20,11 +20,11 @@ End-to-end worked example: a support persona that answers product and policy que
 ## Run
 
 ```bash
-pip install nova-os-sdk fastapi uvicorn
-export NOVA_OS_URL=https://nova.your-company.example
-export NOVA_OS_API_KEY=msk_live_...
-export NOVA_CB_SECRET=change-me
-export NOVA_CB_URL=https://partner.example/nova/cb   # public URL of webhook_server.py
+pip install libraos-sdk fastapi uvicorn
+export LIBRA_OS_URL=https://nova.your-company.example
+export LIBRA_OS_API_KEY=msk_live_...
+export LIBRA_OS_CB_SECRET=change-me
+export LIBRA_OS_CB_URL=https://partner.example/nova/cb   # public URL of webhook_server.py
 
 # terminal 1 — the tool host
 uvicorn webhook_server:app --port 8080
@@ -43,15 +43,15 @@ A: Your order ORD-5591 is in transit with UPS (tracking 1Z999AA10123456784),
    estimated to arrive 2026-07-04.
 ```
 
-> **Local testing:** `NOVA_CB_URL` must be reachable *from Libra OS*. For local dev, expose `webhook_server.py` with a tunnel (ngrok/cloudflared) and set `NOVA_CB_URL` to the tunnel URL.
+> **Local testing:** `LIBRA_OS_CB_URL` must be reachable *from LibraOS*. For local dev, expose `webhook_server.py` with a tunnel (ngrok/cloudflared) and set `LIBRA_OS_CB_URL` to the tunnel URL.
 
 ## Adapting to your data
 
 - **Real KB.** Replace `sample_support_kb.md` with your actual help-centre content, or upload files with `c.documents.upload(...)`. See the [`document-qa`](../document-qa/) recipe for retrieval tuning.
-- **Real tools.** Point `_ORDER_DB` at your OMS. Add more tools (issue a refund, create a ticket, check inventory) by appending to `CUSTOM_TOOLS` and adding a matching `@router.tool(...)` handler. High-risk, side-effecting tools can be gated behind the dry-run / approval flow (`NOVA_OS_PENDING_ACTIONS_ENABLED`).
+- **Real tools.** Point `_ORDER_DB` at your OMS. Add more tools (issue a refund, create a ticket, check inventory) by appending to `CUSTOM_TOOLS` and adding a matching `@router.tool(...)` handler. High-risk, side-effecting tools can be gated behind the dry-run / approval flow (`LIBRA_OS_PENDING_ACTIONS_ENABLED`).
 - **Relax PII redaction only where a workflow needs raw names.** The redactor is on by default; disable it (`guardrails.pii_redactor: disabled`) *only* on a persona whose job legitimately handles raw customer identifiers, never platform-wide.
 - **Streaming.** For a progressive chat UI, the HTTP surface streams token deltas (`stream=true` on `POST /v1/chat/completions`, or `metadata.stream_events` on the native chat endpoint). Use a streaming model (`gpt-*`, `claude-*`) for smooth output.
 
 ## Prose companion
 
-The Libra OS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → Libra OS → Use Cases → Customer Support Agent**.
+The LibraOS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → LibraOS → Use Cases → Customer Support Agent**.

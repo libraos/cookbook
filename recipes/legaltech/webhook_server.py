@@ -1,7 +1,7 @@
 """Legaltech — partner-side webhook server hosting the precedent-lookup tool.
 
 Pairs with `contract_clause_extraction.py`. Every time the agent calls the
-`lookup_clause_precedent` tool, Libra OS POSTs a signed JSON payload here.
+`lookup_clause_precedent` tool, LibraOS POSTs a signed JSON payload here.
 The HMAC-SHA256 signature is verified by `WebhookRouter` before the handler
 runs.
 
@@ -11,8 +11,8 @@ whatever your legal-tech stack uses). The handler signature is unchanged.
 
 Prerequisites::
 
-    pip install nova-os-sdk fastapi uvicorn
-    export NOVA_CB_SECRET=<copy from Libra OS dashboard or generate locally>
+    pip install libraos-sdk fastapi uvicorn
+    export LIBRA_OS_CB_SECRET=<copy from LibraOS dashboard or generate locally>
 
 Run::
 
@@ -26,7 +26,7 @@ import os
 from fastapi import FastAPI
 
 try:
-    from nova_os.callbacks import WebhookRouter
+    from libraos.callbacks import WebhookRouter
 except ImportError:
     # Fallback so this file is at least syntax-checkable in environments
     # where the real WebhookRouter isn't installed yet.
@@ -82,7 +82,7 @@ def _cosine_like_score(a: str, b: str) -> float:
     return len(sa & sb) / len(sa | sb)
 
 
-router = WebhookRouter(secret=os.environ.get("NOVA_CB_SECRET", "changeme"))
+router = WebhookRouter(secret=os.environ.get("LIBRA_OS_CB_SECRET", "changeme"))
 
 
 @router.tool("lookup_clause_precedent")

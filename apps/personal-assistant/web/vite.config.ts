@@ -7,7 +7,7 @@ import react from "@vitejs/plugin-react";
 // the app working. See README "How it works".
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
-  const kernel = env.LIBRAOS_URL || "http://localhost:8900";
+  const kernel = env.LIBRA_OS_URL || "http://localhost:8900";
   const proxy = { "/oauth": kernel, "/v1": kernel, "/api": kernel };
   return {
     plugins: [react()],

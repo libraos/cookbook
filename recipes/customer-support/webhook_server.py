@@ -1,7 +1,7 @@
 """Customer support — partner-side webhook hosting the order-lookup tool.
 
 Pairs with `support_agent.py`. Every time the agent calls the `order_lookup`
-tool, Libra OS POSTs a signed JSON payload here. The HMAC-SHA256 signature is
+tool, LibraOS POSTs a signed JSON payload here. The HMAC-SHA256 signature is
 verified by `WebhookRouter` before the handler runs.
 
 In production: replace the in-memory `_ORDER_DB` with a real query against your
@@ -10,8 +10,8 @@ signature is unchanged.
 
 Prerequisites::
 
-    pip install nova-os-sdk fastapi uvicorn
-    export NOVA_CB_SECRET=<copy from Libra OS dashboard or generate locally>
+    pip install libraos-sdk fastapi uvicorn
+    export LIBRA_OS_CB_SECRET=<copy from LibraOS dashboard or generate locally>
 
 Run::
 
@@ -25,7 +25,7 @@ import os
 from fastapi import FastAPI
 
 try:
-    from nova_os.callbacks import WebhookRouter
+    from libraos.callbacks import WebhookRouter
 except ImportError:
     # Fallback so this file is syntax-checkable without the SDK installed.
     from fastapi import APIRouter
@@ -60,7 +60,7 @@ _ORDER_DB: dict[str, dict] = {
 }
 
 
-router = WebhookRouter(secret=os.environ.get("NOVA_CB_SECRET", "changeme"))
+router = WebhookRouter(secret=os.environ.get("LIBRA_OS_CB_SECRET", "changeme"))
 
 
 @router.tool("order_lookup")

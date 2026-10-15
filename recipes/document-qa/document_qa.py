@@ -9,14 +9,14 @@ End-to-end partner-side script:
        NOT (the agent should decline rather than fabricate).
 
 The prose companion (collection setup, retrieval tuning, the knowledge_gate
-score floor) lives in the Libra OS docs:
-https://docs.meganova.ai → Libra OS → Use Cases → Document Q&A Copilot.
+score floor) lives in the LibraOS docs:
+https://docs.meganova.ai → LibraOS → Use Cases → Document Q&A Copilot.
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
 
 Run::
 
@@ -28,14 +28,14 @@ from __future__ import annotations
 import asyncio
 import os
 
-from nova_os import Client
+from libraos import Client
 
 
 COLLECTION = "employee-handbook"
 
 # In a real deployment you'd upload PDFs/DOCX with `c.documents.upload(...)`;
 # here we ingest a few short text docs inline so the recipe is self-contained.
-# Libra OS chunks, embeds, and indexes each one automatically.
+# LibraOS chunks, embeds, and indexes each one automatically.
 DOCS: list[dict] = [
     {
         "title": "pto-policy",
@@ -71,13 +71,13 @@ async def ask(c: Client, question: str) -> None:
         messages=[{"role": "user", "content": question}],
         metadata={"agent_id": "handbook-copilot"},
     )
-    text = resp.content if hasattr(resp, "content") else resp
+    text = resp.text
     print(f"\nQ: {question}\nA: {text}")
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
         # 1. Ingest the documents. The collection is created on first ingest.

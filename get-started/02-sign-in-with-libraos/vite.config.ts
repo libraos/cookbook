@@ -6,7 +6,7 @@ import { defineConfig, loadEnv } from "vite";
 // See README "Why a proxy?".
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
-  const kernel = env.LIBRAOS_URL || "http://localhost:8900";
+  const kernel = env.LIBRA_OS_URL || "http://localhost:8900";
   const proxy = { "/oauth": kernel };
   return {
     // Must match the redirect_uri registered for this client, port included.

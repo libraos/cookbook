@@ -1,4 +1,4 @@
-const CLIENT_ID = import.meta.env.VITE_LIBRAOS_CLIENT_ID ?? "digital-marketing-team";
+const CLIENT_ID = import.meta.env.VITE_LIBRA_OS_CLIENT_ID ?? "digital-marketing-team";
 const REDIRECT_URI = `${location.origin}/callback`;
 
 type Tokens = { access_token: string; refresh_token?: string };

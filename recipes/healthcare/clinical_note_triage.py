@@ -12,9 +12,9 @@ End-to-end partner-side script:
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
 
 Run::
 
@@ -28,7 +28,7 @@ import json
 import os
 from pathlib import Path
 
-from nova_os import Client
+from libraos import Client
 
 
 TRIAGE_SCHEMA: dict = {
@@ -75,8 +75,8 @@ SAMPLE_NOTE_PATH = Path(__file__).with_name("sample_note.txt")
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     note_text = SAMPLE_NOTE_PATH.read_text(encoding="utf-8")
 
@@ -102,8 +102,8 @@ async def main() -> None:
             },
         )
 
-        # 2. Attach the triage agent. `output_type.violation_mode=repair` means
-        #    if the model's first reply doesn't match TRIAGE_SCHEMA, Libra OS
+        # 2. Attach the triage agent. `output_type.on_violation=repair` means
+        #    if the model's first reply doesn't match TRIAGE_SCHEMA, LibraOS
         #    re-prompts once with the schema in the system prompt before
         #    returning the result. Better than a 422 in a clinical workflow.
         await c.agents.create(
@@ -114,7 +114,7 @@ async def main() -> None:
                 "Triages clinical notes into a structured urgency + suggested-action "
                 "decision. Outputs are validated against a hard JSON Schema contract."
             ),
-            output_type={"schema": TRIAGE_SCHEMA, "violation_mode": "repair"},
+            output_type={"schema_inline": TRIAGE_SCHEMA, "on_violation": "repair"},
             instructions=(
                 "You are a clinical triage decision-support tool. Read the note, "
                 "identify red flags using standard clinical-decision keywords, and "
@@ -140,11 +140,12 @@ async def main() -> None:
                 }
             ],
             metadata={"agent_id": "clinical-triage"},
-            extra_headers={"X-End-User": patient_id},
+            # Per-end-user memory needs the X-End-User header, which the SDK's
+            # messages.create does not send yet; memory here is per API key + agent.
         )
 
         # 4. Validated structured output — partners can json.loads directly.
-        decision = resp.structured_output if hasattr(resp, "structured_output") else resp
+        decision = json.loads(resp.text)
         print("Triage decision:")
         print(json.dumps(decision, indent=2))
 
