@@ -34,8 +34,8 @@ Settings, both optional (copy `.env.example` to `.env`):
 
 | Variable | Default | What it is |
 |---|---|---|
-| `LIBRAOS_URL` | `http://localhost:8900` | The kernel. Only the dev server uses it. |
-| `VITE_LIBRAOS_CLIENT_ID` | `signin-example` | This app's OIDC client id. |
+| `LIBRA_OS_URL` | `http://localhost:8900` | The kernel. Only the dev server uses it. |
+| `VITE_LIBRA_OS_CLIENT_ID` | `signin-example` | This app's OIDC client id. |
 
 ## Step by step
 

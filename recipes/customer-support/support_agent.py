@@ -11,20 +11,20 @@ The default PII-redactor and AI-Firewall guardrails stay on — a support agent
 handles customer text, so inbound abuse protection and outbound PII scrubbing
 are exactly what you want. See the README for when to relax them.
 
-Pair with `webhook_server.py` (FastAPI) running on `${NOVA_CB_URL}` so the
+Pair with `webhook_server.py` (FastAPI) running on `${LIBRA_OS_CB_URL}` so the
 order-lookup tool callback has somewhere to land.
 
 The prose companion (knowledge + tools + guardrails + streaming together) lives
-in the Libra OS docs:
-https://docs.meganova.ai → Libra OS → Use Cases → Customer Support Agent.
+in the LibraOS docs:
+https://docs.meganova.ai → LibraOS → Use Cases → Customer Support Agent.
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
-    export NOVA_CB_URL=https://partner.example/nova/cb   # where webhook_server.py is reachable
-    export NOVA_CB_SECRET=<your webhook secret>
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
+    export LIBRA_OS_CB_URL=https://partner.example/nova/cb   # where webhook_server.py is reachable
+    export LIBRA_OS_CB_SECRET=<your webhook secret>
 
 Run::
 
@@ -40,13 +40,13 @@ import asyncio
 import os
 from pathlib import Path
 
-from nova_os import Client
+from libraos import Client
 
 
 COLLECTION = "support-kb"
 KB_PATH = Path(__file__).with_name("sample_support_kb.md")
 
-# Mode B custom tool: Libra OS POSTs a signed payload to callback_url when the
+# Mode B custom tool: LibraOS POSTs a signed payload to callback_url when the
 # agent decides to look up an order. The partner-side handler lives in
 # webhook_server.py.
 CUSTOM_TOOLS: list[dict] = [
@@ -63,7 +63,7 @@ CUSTOM_TOOLS: list[dict] = [
             "properties": {"order_id": {"type": "string"}},
             "additionalProperties": False,
         },
-        "callback_url": os.environ.get("NOVA_CB_URL", "https://partner.example/nova/cb"),
+        "callback_url": os.environ.get("LIBRA_OS_CB_URL", "https://partner.example/nova/cb"),
     },
 ]
 
@@ -73,17 +73,16 @@ async def ask(c: Client, customer: str, question: str) -> None:
         agent_id="support-agent",
         messages=[{"role": "user", "content": question}],
         metadata={"agent_id": "support-agent"},
-        # Scope the agent's memory to this customer (their prior context never
-        # bleeds into another customer's session).
-        extra_headers={"X-End-User": customer},
+        # Per-end-user memory needs the X-End-User header, which the SDK's
+        # messages.create does not send yet; memory here is per API key + agent.
     )
-    text = resp.content if hasattr(resp, "content") else resp
+    text = resp.text
     print(f"\n[{customer}] Q: {question}\nA: {text}")
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
         # 1. Ingest the support KB (created on first ingest).

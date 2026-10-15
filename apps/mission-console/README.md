@@ -31,10 +31,10 @@ Then start the console:
 ```bash
 cd apps/mission-console
 npm install
-npm run dev        # http://localhost:5182, proxies /oauth, /agents and /api to LIBRAOS_URL (default http://localhost:8900)
+npm run dev        # http://localhost:5182, proxies /oauth, /agents and /api to LIBRA_OS_URL (default http://localhost:8900)
 ```
 
-To reuse an existing OIDC client, set `VITE_LIBRAOS_CLIENT_ID`. Its redirect URI must point to this app's `/callback`.
+To reuse an existing OIDC client, set `VITE_LIBRA_OS_CLIENT_ID`. Its redirect URI must point to this app's `/callback`.
 
 A mission in progress survives reloads: the URL carries `?mission=…&job=…`, and the console replays the job's stored events before following live work.
 

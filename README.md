@@ -51,7 +51,7 @@ Reusable teams: a director, specialist agents, knowledge, safety rules and the m
 
 ## Recipes
 
-Each recipe is the runnable companion to a Libra OS docs use-case guide (linked in its README) — prose there, working code here.
+Each recipe is the runnable companion to a LibraOS docs use-case guide (linked in its README) — prose there, working code here.
 
 ### Use-case recipes
 
@@ -73,9 +73,9 @@ Each recipe is the runnable companion to a Libra OS docs use-case guide (linked 
 ## Common prerequisites (recipes)
 
 ```bash
-pip install nova-os-sdk
-export NOVA_OS_URL=https://nova.your-company.example
-export NOVA_OS_API_KEY=msk_live_...
+pip install libraos-sdk
+export LIBRA_OS_URL=https://nova.your-company.example
+export LIBRA_OS_API_KEY=msk_live_...
 ```
 
 Each recipe's `README.md` lists vertical-specific extras (FastAPI for the legaltech webhook, etc.).

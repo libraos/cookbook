@@ -14,14 +14,14 @@ End-to-end worked example: a partner ingests policy documents into a knowledge c
 |---|---|
 | `document_qa.py` | Ingests inline handbook docs, registers the copilot, asks in-scope + out-of-scope questions |
 
-The recipe ingests short text inline so it's self-contained. In a real deployment you'd upload the actual files with `c.documents.upload(...)` (PDF/DOCX/etc. — Libra OS extracts, chunks, embeds, and OCRs scanned pages automatically).
+The recipe ingests short text inline so it's self-contained. In a real deployment you'd upload the actual files with `c.documents.upload(...)` (PDF/DOCX/etc. — LibraOS extracts, chunks, embeds, and OCRs scanned pages automatically).
 
 ## Run
 
 ```bash
-pip install nova-os-sdk
-export NOVA_OS_URL=https://nova.your-company.example
-export NOVA_OS_API_KEY=msk_live_...
+pip install libraos-sdk
+export LIBRA_OS_URL=https://nova.your-company.example
+export LIBRA_OS_API_KEY=msk_live_...
 python document_qa.py
 ```
 
@@ -38,10 +38,10 @@ A: The handbook doesn't cover parental leave, so I can't state a policy from the
 ## Adapting to your data
 
 - **Upload real documents.** Swap the inline `DOCS` for `c.documents.upload(...)` against your PDFs/DOCX. Richer source documents are the single biggest quality lever — ingest the actual policy texts, not summaries.
-- **Tune retrieval for multi-document matters.** Operators can raise `NOVA_OS_RAG_TOP_K` (chunks injected per turn) so a fact living only in a second or third document isn't lost, and lower `NOVA_OS_RAG_VECTOR_THRESHOLD` to admit under-scoring but relevant chunks.
-- **Tune the gate.** `knowledge_gate_min_score` (per agent) / `NOVA_OS_KNOWLEDGE_GATE_MIN_SCORE` sets how confident a retrieval hit must be to take the cheap path. Raise it to escalate more turns to the planner; lower it to answer more directly.
+- **Tune retrieval for multi-document matters.** Operators can raise `LIBRA_OS_RAG_TOP_K` (chunks injected per turn) so a fact living only in a second or third document isn't lost, and lower `LIBRA_OS_RAG_VECTOR_THRESHOLD` to admit under-scoring but relevant chunks.
+- **Tune the gate.** `knowledge_gate_min_score` (per agent) / `LIBRA_OS_KNOWLEDGE_GATE_MIN_SCORE` sets how confident a retrieval hit must be to take the cheap path. Raise it to escalate more turns to the planner; lower it to answer more directly.
 - **Keep the anti-fabrication instruction.** The "never guess a policy" line in the system prompt is load-bearing — it's what turns a miss into an honest "not covered" instead of a confident hallucination.
 
 ## Prose companion
 
-The Libra OS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → Libra OS → Use Cases → Document Q&A Copilot**.
+The LibraOS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → LibraOS → Use Cases → Document Q&A Copilot**.

@@ -2,7 +2,7 @@
 // written out by hand so every step is visible. A real app can use any
 // certified OIDC client library instead; the steps are the same.
 
-const CLIENT_ID = import.meta.env.VITE_LIBRAOS_CLIENT_ID ?? "signin-example";
+const CLIENT_ID = import.meta.env.VITE_LIBRA_OS_CLIENT_ID ?? "signin-example";
 // Must equal the registered redirect_uri exactly: scheme, host, port, path.
 const REDIRECT_URI = `${location.origin}/callback`;
 

@@ -5,20 +5,20 @@ End-to-end partner-side script:
        a JSON-schema contract — every decision is a typed
        `{reasoning, verdict, categories, risk_score}` object.
     2. Runs a small labelled set of UGC snippets through it and reports accuracy.
-    3. Layers on top of Libra OS's built-in AI Firewall: the firewall is a
+    3. Layers on top of LibraOS's built-in AI Firewall: the firewall is a
        platform-level inbound guardrail (prompt-injection / jailbreak / abuse)
        that runs BEFORE your agent; this agent is your *domain* policy on top —
        the two are complementary, not a substitute for each other.
 
 The prose companion (policy design, category taxonomy, the firewall threshold
-knob) lives in the Libra OS docs:
-https://docs.meganova.ai → Libra OS → Use Cases → Content Moderation.
+knob) lives in the LibraOS docs:
+https://docs.meganova.ai → LibraOS → Use Cases → Content Moderation.
 
 Prerequisites::
 
-    pip install nova-os-sdk
-    export NOVA_OS_URL=https://nova.your-company.example
-    export NOVA_OS_API_KEY=msk_live_...
+    pip install libraos-sdk
+    export LIBRA_OS_URL=https://nova.your-company.example
+    export LIBRA_OS_API_KEY=msk_live_...
 
 Run::
 
@@ -32,7 +32,7 @@ import json
 import os
 from pathlib import Path
 
-from nova_os import Client
+from libraos import Client
 
 
 MODERATION_SCHEMA: dict = {
@@ -85,8 +85,8 @@ def load_labelled() -> list[dict]:
 
 
 async def main() -> None:
-    base_url = os.environ.get("NOVA_OS_URL", "https://nova.your-company.example")
-    api_key = os.environ["NOVA_OS_API_KEY"]
+    base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
+    api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
         await c.employees.create(
@@ -106,7 +106,7 @@ async def main() -> None:
             owner_employee="trust-safety",
             brain=False,
             description="Scores user-generated content against the platform policy.",
-            output_type={"schema": MODERATION_SCHEMA, "violation_mode": "repair"},
+            output_type={"schema_inline": MODERATION_SCHEMA, "on_violation": "repair"},
             instructions=(
                 "You are a content-moderation classifier applying the platform policy. "
                 "Read the content, decide allow / flag / block, list every policy "
@@ -124,7 +124,7 @@ async def main() -> None:
                 messages=[{"role": "user", "content": item["content"]}],
                 metadata={"agent_id": "content-moderator"},
             )
-            v = resp.structured_output if hasattr(resp, "structured_output") else resp
+            v = json.loads(resp.text)
             ok = v["verdict"] == item["expected"]
             correct += ok
             mark = "✓" if ok else "✗"
