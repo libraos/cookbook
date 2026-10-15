@@ -24,11 +24,13 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 from pathlib import Path
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 TRIAGE_SCHEMA: dict = {
@@ -85,6 +87,12 @@ async def main() -> None:
     patient_id = "PT-2026-0942"
 
     async with Client(base_url=base_url, api_key=api_key) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "clinical-triage"), (c.employees.delete, "triage-clinician")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Create the digital employee. Answer model on Opus for clinical
         #    reasoning; skill model on Flash for the schema-validation retry.
         await c.employees.create(

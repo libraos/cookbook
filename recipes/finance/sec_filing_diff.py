@@ -28,6 +28,7 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -35,6 +36,7 @@ from pathlib import Path
 import httpx
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 DIFF_SCHEMA: dict = {
@@ -112,6 +114,12 @@ async def main() -> None:
     fy2026 = SAMPLE_2026.read_text(encoding="utf-8")
 
     async with Client(base_url=base_url, api_key=api_key) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "filing-analyst"), (c.employees.delete, "filings-research")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Set up the employee + agent.
         await c.employees.create(
             id="filings-research",
