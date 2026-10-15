@@ -27,11 +27,13 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 from pathlib import Path
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 # The contract every classification is validated against. `on_violation=repair`
@@ -76,6 +78,12 @@ async def main() -> None:
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "ticket-router"), (c.employees.delete, "support-desk")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Digital employee. Classification only needs the fast skill tier.
         await c.employees.create(
             id="support-desk",

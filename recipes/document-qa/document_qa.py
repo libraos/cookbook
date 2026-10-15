@@ -26,9 +26,11 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 COLLECTION = "employee-handbook"
@@ -80,6 +82,12 @@ async def main() -> None:
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "handbook-copilot"), (c.employees.delete, "people-ops")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Ingest the documents. The collection is created on first ingest.
         for doc in DOCS:
             await c.knowledge.ingest(

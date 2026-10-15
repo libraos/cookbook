@@ -37,10 +37,12 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import os
 from pathlib import Path
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 COLLECTION = "support-kb"
@@ -85,6 +87,12 @@ async def main() -> None:
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
     async with Client(base_url=base_url, api_key=api_key) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "support-agent"), (c.employees.delete, "support-team")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Ingest the support KB (created on first ingest).
         await c.knowledge.ingest(
             content=KB_PATH.read_text(encoding="utf-8"),

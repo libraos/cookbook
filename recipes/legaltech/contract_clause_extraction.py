@@ -28,11 +28,13 @@ Run::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import os
 from pathlib import Path
 
 from libraos import Client
+from libraos.errors import NotFoundError
 
 
 CLAUSE_OUTPUT_SCHEMA: dict = {
@@ -115,6 +117,12 @@ async def main() -> None:
 
     # Clause extraction over a whole agreement can take minutes.
     async with Client(base_url=base_url, api_key=api_key, timeout=300) as c:
+        # Start clean: a run that failed part-way leaves these behind, and the
+        # create calls below would then fail with 409.
+        for remove, name in ((c.agents.delete, "legal-clause-extractor"), (c.employees.delete, "contracts-reviewer")):
+            with contextlib.suppress(NotFoundError):
+                await remove(name)
+
         # 1. Create the digital employee with a multi-tier model cascade.
         await c.employees.create(
             id="contracts-reviewer",
