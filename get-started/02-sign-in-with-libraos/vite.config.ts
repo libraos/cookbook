@@ -7,10 +7,13 @@ import { defineConfig, loadEnv } from "vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   const kernel = env.LIBRA_OS_URL || "http://localhost:8900";
+  // Must match the redirect_uri registered for this client, port included.
+  // PORT=5178 npm run dev (or PORT in .env) moves it; then register
+  // signin-example=http://localhost:5178/callback in get-started/.env too.
+  const port = Number(env.PORT) || 5173;
   const proxy = { "/oauth": kernel };
   return {
-    // Must match the redirect_uri registered for this client, port included.
-    server: { port: 5173, strictPort: true, proxy },
-    preview: { port: 5173, strictPort: true, proxy },
+    server: { port, strictPort: true, proxy },
+    preview: { port, strictPort: true, proxy },
   };
 });
