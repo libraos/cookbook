@@ -64,6 +64,8 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
 
 ## Verification record — 2026-10-16
 
+- Offline results after local integration: **36 Python tests passed**, **9 mission
+  client tests passed**, **4 live evaluations skipped** by explicit opt-in policy.
 - Environment used for the new Python protocol suite: Python 3.12, SDK 2.0.0,
   direct dependencies pinned in `requirements-dev.txt`.
 - Mission client: Node 24 locally; CI targets Node 22 with type stripping.
@@ -73,8 +75,9 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
   do not treat that default as evidence of feature parity with current source.
 - Async issue #1708: closed when checked; HTTP example retains native shapes.
 - Baseline integration: [PR #12](https://github.com/libraos/cookbook/pull/12),
-  [PR #13](https://github.com/libraos/cookbook/pull/13) and
-  [PR #14](https://github.com/libraos/cookbook/pull/14) report v0.2.2 live checks
+  [PR #13](https://github.com/libraos/cookbook/pull/13),
+  [PR #14](https://github.com/libraos/cookbook/pull/14) and
+  [PR #15](https://github.com/libraos/cookbook/pull/15) report v0.2.2 live checks
   for original examples. Those reported runs are distinct from this branch's
   offline tests and do not validate the three newly added P0 recipes.
 

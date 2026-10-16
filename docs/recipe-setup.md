@@ -1,6 +1,6 @@
 # Shared recipe environment
 
-Use Python **3.12** for the documented test environment, Node **22.6+** for the
+Use Python **3.12** for the documented test environment, Node **22.12+** for the
 mission-client tests, and a disposable local Runtime. From the repository root:
 
 ```bash
