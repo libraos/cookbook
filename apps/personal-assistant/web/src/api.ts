@@ -28,8 +28,11 @@ export const getMe = async () => json<Me>(await authFetch("/oauth/userinfo"));
 //   {"type":"text","content":"…"}      a piece of the reply, in order
 //   {"type":"content","content":"…"}   the whole reply once more, at the end
 //   {"type":"error","error":"…"}       the turn failed (a `done` still follows)
-//   {"type":"done","conversation_id":"…","cited_sources":[…], …}
-// Streamed turns are saved and remembered like any other (kernel v0.1.21+).
+//   {"type":"done","conversation_id":"…","grounding":"grounded",
+//    "retrieved_chunks":[…], "cited_sources":[…], …}
+// retrieved_chunks names the documents the answer was grounded in;
+// cited_sources only those the model cited in its text (often none).
+// Streamed turns are saved and remembered like any other.
 export async function chat(
   messages: Message[],
   conversationId: string | null,
@@ -43,7 +46,7 @@ export async function chat(
   if (!res.ok || !res.body) await json(res); // throws with the status
 
   let text = "";
-  let done: { conversation_id: string; cited_sources?: string[] } | null = null;
+  let done: { conversation_id: string; cited_sources?: string[]; retrieved_chunks?: string[] } | null = null;
   const reader = res.body!.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";
   for (;;) {
@@ -64,7 +67,8 @@ export async function chat(
     }
   }
   if (!done) throw new Error("chat: the stream ended before the reply was complete");
-  return { text, conversationId: done.conversation_id, sources: done.cited_sources ?? [] };
+  const sources = done.cited_sources?.length ? done.cited_sources : done.retrieved_chunks ?? [];
+  return { text, conversationId: done.conversation_id, sources };
 }
 
 // ── Conversations ───────────────────────────────────────────────────────────

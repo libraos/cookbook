@@ -1,10 +1,12 @@
 # A local LibraOS kernel for the get-started examples.
 #   cp .env.example .env   # then set a model endpoint
 #   docker compose up -d
-# Kernel: http://localhost:8900   Admin: the email/password in .env
+# Kernel: http://localhost:8900 (LIBRAOS_PORT to change)   Admin: the email/password in .env
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    # The kernel keeps document vectors in Postgres with pgvector 0.8+ (v0.2.x).
+    # Switching Postgres major versions needs a fresh volume: docker compose down -v
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: libraos
       POSTGRES_PASSWORD: libraos
@@ -16,10 +18,14 @@ services:
       retries: 30
 
   libraos:
-    image: ghcr.io/libraos/libraos:${LIBRAOS_VERSION:-v0.1.21}
+    image: ghcr.io/libraos/libraos:${LIBRAOS_VERSION:-v0.2.2}
     depends_on:
       postgres: { condition: service_healthy }
+    # Host port LIBRAOS_PORT (default 8900). If you change it, change
+    # LIBRA_OS_PUBLIC_URL in .env to match.
     ports: ["${LIBRAOS_PORT:-8900}:8900"]
+    # Lets the container reach a model server on this machine as
+    # host.docker.internal (see README "Troubleshooting" for the Linux caveat).
     extra_hosts: ["host.docker.internal:host-gateway"]
     env_file: .env
     # The kernel refuses to start under Docker's default 64 KiB memlock cap.

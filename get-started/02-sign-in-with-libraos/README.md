@@ -30,12 +30,17 @@ that `apps/personal-assistant/scripts/setup.sh` creates.) You'll see the
 `/oauth/userinfo` response and the id_token's claims. **Sign out** ends both
 the app's session and the kernel's.
 
-Settings, both optional (copy `.env.example` to `.env`):
+Settings, all optional (copy `.env.example` to `.env`, or set them in the
+shell):
 
 | Variable | Default | What it is |
 |---|---|---|
 | `LIBRA_OS_URL` | `http://localhost:8900` | The kernel. Only the dev server uses it. |
 | `VITE_LIBRA_OS_CLIENT_ID` | `signin-example` | This app's OIDC client id. |
+| `PORT` | `5173` | The dev server's port. It is part of the redirect URI, so register the same port in `get-started/.env` (`signin-example=http://localhost:<port>/callback`) and restart the kernel. |
+
+Port 5173 already in use? `PORT=5178 npm run dev`, with
+`signin-example=http://localhost:5178/callback` in `LIBRA_OS_OIDC_CLIENTS`.
 
 ## Step by step
 
@@ -98,7 +103,8 @@ relative path on its own origin, and returns JSON otherwise. With the proxy,
   `http://127.0.0.1:5173/callback` are different clients as far as the kernel is
   concerned, and so are `…:5173` and `…:5173/`. The mismatch surfaces as
   `{"error":"redirect_uri_mismatch"}`. Open the app on `localhost`, and keep
-  `strictPort` on so Vite never moves to 5174.
+  `strictPort` on so Vite never moves to 5174 by itself. To use another port,
+  set `PORT` and register it (see "Run it").
 - **The token request is form-encoded.** `client_credentials` also accepts
   JSON (01-first-agent uses it), but `authorization_code` and `refresh_token`
   read form fields only. A JSON body gets `{"error":"invalid_grant"}`, which
