@@ -17,3 +17,7 @@ env/
 .ruff_cache/
 .DS_Store
 node_modules/
+job-receipt*.json
+receipts.jsonl
+test-results.xml
+live-results.xml

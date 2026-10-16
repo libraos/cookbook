@@ -1,0 +1,9 @@
+# Paths resolve relative to get-started/docker-compose.yml (the first -f).
+services:
+  libraos:
+    environment:
+      LIBRA_OS_CALLBACK_SECRET_COOKBOOK: ${LIBRA_OS_CALLBACK_SECRET_COOKBOOK:?set the same secret as the webhook host}
+      LIBRA_OS_CALLBACK_DEV_HOSTS: host.docker.internal:8080
+      LIBRA_OS_CALLBACK_ALLOWED_HOSTS: host.docker.internal:8080
+    volumes:
+      - ../recipes/tool-calling/libraos-app:/var/nova-os/apps/cookbook-tools:ro

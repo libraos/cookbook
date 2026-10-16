@@ -21,7 +21,7 @@ End-to-end worked example: a partner sends raw ticket text to a classifier agent
 Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
 
 ```bash
-pip install libraos-sdk
+pip install libraos-sdk jsonschema
 export LIBRA_OS_URL=https://nova.your-company.example
 export LIBRA_OS_API_KEY=msk_live_...
 python ticket_routing.py

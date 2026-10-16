@@ -1,0 +1,4 @@
+name: cookbook-tools
+version: 0.1.0
+schema_prefix: cbt_
+agents: agents

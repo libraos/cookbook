@@ -3,6 +3,11 @@
 Run a LibraOS kernel on your laptop and build on it, one small example at a
 time.
 
+Follow the [learning paths](../docs/learning-paths.md): First Agent → Ticket
+Routing → choose Knowledge, Tools or Memory. Sign-in below is an optional
+application-development branch. For Python recipes, use the
+[shared environment and local token setup](../docs/recipe-setup.md).
+
 | Example | What it shows |
 |---|---|
 | [`01-first-agent/`](01-first-agent/) | Create an agent and talk to it: a token, one `POST /v1/agents`, one chat call. Python with the SDK (`first-agent.py`), Bash (`first-agent.sh`) or TypeScript (`first-agent.ts`). |
