@@ -1,8 +1,9 @@
 """Customer support — partner-side webhook hosting the order-lookup tool.
 
 Pairs with `support_agent.py`. Every time the agent calls the `order_lookup`
-tool, LibraOS POSTs a signed JSON payload here. The HMAC-SHA256 signature is
-verified by `WebhookRouter` before the handler runs.
+tool, LibraOS POSTs a signed JSON payload here. The HMAC-SHA256 signature
+(`X-LibraOS-Signature`, or the older `X-Nova-Signature`) is verified by
+`WebhookRouter` before the handler runs; a bad signature is a 401.
 
 In production: replace the in-memory `_ORDER_DB` with a real query against your
 order-management system (Postgres, Shopify Admin API, your OMS, …). The handler
@@ -11,7 +12,7 @@ signature is unchanged.
 Prerequisites::
 
     pip install libraos-sdk fastapi uvicorn
-    export LIBRA_OS_CB_SECRET=<copy from LibraOS dashboard or generate locally>
+    export LIBRA_OS_CB_SECRET=<the value of LIBRA_OS_CALLBACK_SECRET_SUPPORT on the LibraOS host>
 
 Run::
 

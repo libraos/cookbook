@@ -59,8 +59,8 @@ Each recipe is the runnable companion to a LibraOS docs use-case guide (linked i
 |---|---|
 | [`recipes/ticket-routing/`](recipes/ticket-routing/) | Classify support tickets into a validated `intent` with `output_type` + `repair`, plus an accuracy eval loop |
 | [`recipes/content-moderation/`](recipes/content-moderation/) | Risk-score UGC (`allow`/`flag`/`block` + score) with `output_type`, layered on the built-in AI Firewall |
-| [`recipes/document-qa/`](recipes/document-qa/) | Grounded, cited answers over ingested documents with `knowledge_bindings` + `knowledge_gate` (and honest refusal on a miss) |
-| [`recipes/customer-support/`](recipes/customer-support/) | A persona that answers from a KB **and** calls a Mode B custom-tool webhook for live order status, with guardrails on |
+| [`recipes/document-qa/`](recipes/document-qa/) | Grounded, cited answers over ingested documents with `knowledge_bindings` (and honest refusal on a miss) |
+| [`recipes/customer-support/`](recipes/customer-support/) | An agent, imported as an employee bundle, that answers from a KB **and** calls a Mode B custom-tool webhook for live order status, with guardrails on |
 
 ### Vertical worked examples
 
@@ -68,7 +68,7 @@ Each recipe is the runnable companion to a LibraOS docs use-case guide (linked i
 |---|---|
 | [`recipes/legaltech/`](recipes/legaltech/) | Contract clause extraction with structured output + a Mode B custom-tool webhook for partner-side precedent lookup |
 | [`recipes/healthcare/`](recipes/healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-end-user identity passthrough for HIPAA-style isolation |
-| [`recipes/finance/`](recipes/finance/) | 10-K filing diff using the async-job pattern for long documents, with `web_search_config` for live market-data enrichment |
+| [`recipes/finance/`](recipes/finance/) | 10-K filing diff using the async-job pattern for long documents, with `search_web` for live market-data enrichment |
 
 ## Common prerequisites (recipes)
 
@@ -86,4 +86,4 @@ All sample inputs are **synthetic**. The legaltech MSA, the healthcare clinical 
 
 ## Versioning
 
-Recipes target the latest stable SDK release. If a recipe depends on a specific kernel build (e.g., a feature only available in `v0.1.7+`), its README will say so. The get-started examples and apps pin the kernel image in `get-started/docker-compose.yml`.
+Recipes target the latest stable SDK release and are tested against the kernel version named in each README (currently v0.2.2 with `libraos-sdk` 2.0.0). If a recipe depends on a specific kernel build, its README will say so. The get-started examples and apps pin the kernel image in `get-started/docker-compose.yml`.
