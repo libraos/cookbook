@@ -2,14 +2,13 @@
 
 End-to-end partner-side script:
     1. Ingests a few policy documents into a knowledge collection.
-    2. Creates a persona agent bound to that collection with `knowledge_gate`
-       enabled — a confident retrieval hit is answered on the cheap tier without
-       waking the planner; a miss fails open to the full pipeline.
+    2. Creates a persona agent bound to that collection: every turn retrieves
+       from it and the retrieved passages are injected into the prompt.
     3. Asks a question the documents answer (grounded, cited) and one they do
        NOT (the agent should decline rather than fabricate).
 
-The prose companion (collection setup, retrieval tuning, the knowledge_gate
-score floor) lives in the LibraOS docs:
+The prose companion (collection setup, retrieval tuning, the knowledge gate)
+lives in the LibraOS docs:
 https://docs.meganova.ai → LibraOS → Use Cases → Document Q&A Copilot.
 
 Prerequisites::
@@ -71,7 +70,6 @@ async def ask(c: Client, question: str) -> None:
     resp = await c.messages.create(
         agent_id="handbook-copilot",
         messages=[{"role": "user", "content": question}],
-        metadata={"agent_id": "handbook-copilot"},
     )
     text = resp.text
     print(f"\nQ: {question}\nA: {text}")
@@ -81,12 +79,11 @@ async def main() -> None:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
-    async with Client(base_url=base_url, api_key=api_key) as c:
-        # Start clean: a run that failed part-way leaves these behind, and the
-        # create calls below would then fail with 409.
-        for remove, name in ((c.agents.delete, "handbook-copilot"), (c.employees.delete, "people-ops")):
-            with contextlib.suppress(NotFoundError):
-                await remove(name)
+    async with Client(base_url=base_url, api_key=api_key, timeout=180) as c:
+        # Start clean: a run that failed part-way leaves this behind, and the
+        # create call below would then fail with 409.
+        with contextlib.suppress(NotFoundError):
+            await c.agents.delete("handbook-copilot")
 
         # 1. Ingest the documents. The collection is created on first ingest.
         for doc in DOCS:
@@ -95,26 +92,18 @@ async def main() -> None:
             )
         print(f"Ingested {len(DOCS)} docs into '{COLLECTION}'.")
 
-        # 2. A persona bound to the collection. knowledge_gate answers a confident
-        #    hit on the cheap tier (~sub-second) and fails open to the planner on
-        #    a miss. brain=true so a miss still gets the full pipeline.
-        await c.employees.create(
-            id="people-ops",
-            display_name="People Ops",
-            model_config={
-                "answer": {"primary": "anthropic/claude-opus-4-7", "fallback": ["gemini/gemini-2.5-pro"]},
-                "skill": {"primary": "gemini/gemini-2.5-flash"},
-            },
-        )
+        # 2. A persona bound to the collection. Retrieval is scoped to the
+        #    bound collection and the hits are injected into every turn.
+        #    tool_scope="none": the copilot answers from the injected passages
+        #    and needs no catalog tools (a persona without a scope is offered
+        #    the whole catalog, which only slows the answer down).
         await c.agents.create(
             id="handbook-copilot",
             type="persona",
-            owner_employee="people-ops",
             brain=True,
+            tool_scope="none",
             knowledge_bindings=[COLLECTION],
-            knowledge_gate=True,
-            description="Answers employee questions strictly from the company handbook, with citations.",
-            instructions=(
+            system=(
                 "You are an HR handbook copilot. Answer ONLY from the retrieved handbook "
                 "passages and cite the source for each fact. If the handbook does not cover "
                 "the question, say so plainly — never guess a policy or invent a number."
@@ -131,7 +120,6 @@ async def main() -> None:
 
         # 4. Cleanup for dev loops.
         await c.agents.delete("handbook-copilot")
-        await c.employees.delete("people-ops")
 
 
 if __name__ == "__main__":
