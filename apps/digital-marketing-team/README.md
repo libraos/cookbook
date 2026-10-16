@@ -55,16 +55,23 @@ mission without replaying completed work.
 
 ## Run it
 
-The kernel must include the autonomous mission workflow and run with PostgreSQL:
+Start the kernel from [`get-started/`](../../get-started/) on **v0.2.2 or
+later** (`LIBRAOS_VERSION=v0.2.2` in `get-started/.env` if the compose default
+is older). The mission engine needs PostgreSQL, the workflow runtime and this
+app's sign-in client, which the get-started compose file and `.env.example`
+already set:
 
 ```dotenv
 LIBRA_OS_WORKFLOWS_ENABLED=true
 LIBRA_OS_OIDC_CLIENTS=digital-marketing-team=http://localhost:5181/callback
 ```
 
-Use a model endpoint that supports structured JSON and tool calls for the
-kernel's skill tier. The implementation and validation for this cookbook were
-completed with Sol, as required by the project decision.
+Use a model endpoint that returns structured JSON reliably and supports tool
+calls for the kernel's skill tier (any OpenAI-compatible endpoint; see
+[`get-started/.env.example`](../../get-started/.env.example)). The planner
+asks the model for a complete task graph in one JSON reply; small local models
+sometimes return a graph the kernel rejects (see
+[Model notes](#model-notes)).
 
 Create a normal demo user using the same `.env` as `get-started/`:
 
@@ -88,6 +95,27 @@ npm run dev
 Open <http://localhost:5181> and submit the prefilled mission. The request is
 sent once. After submission the only write the UI can make is resolving a
 decision emitted by that same mission.
+
+## Model notes
+
+The Head of Marketing's planner runs on the kernel's skill tier and must
+return the whole department and task graph as one JSON object. The kernel
+validates that graph (every dependency and every decision's `before_tasks`
+must name a task id) and asks the model for one corrected plan before giving
+up. Smaller local models sometimes list a decision id such as `d01` under a
+task's `dependencies`, and the mission then ends `failed` with
+`mission planning returned an invalid plan: task "t07" has unknown dependency "d01"`
+before any task starts. Each specialist must also reply in JSON; a
+truncated reply fails a critical task with
+`invalid structured output: unexpected end of JSON input`. Nothing in the
+app or the pack changes those prompts (they are compiled into the kernel; see
+[libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660)):
+click **New mission** and submit again, or use a stronger model for
+`LIBRA_OS_SKILL_MODEL`.
+
+A mission is roughly a dozen model calls run three at a time, so on a local
+model expect it to take a while; the page follows the durable event stream
+and can be reloaded (or reopened with its `?job=` URL) without losing work.
 
 ## Runtime event contract
 

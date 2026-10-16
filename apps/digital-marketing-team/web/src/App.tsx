@@ -278,7 +278,10 @@ export function App({ initialError }: { initialError: string | null }) {
                 <div className="actions"><button className="primary" onClick={() => setReportOpen(true)}>Open report</button><button onClick={() => downloadReport(report, plan?.title)}>Download report</button><button onClick={reset}>New mission</button></div>
               </div>
             </article>}
-            {error && <div className="error-banner">{error}</div>}
+            {error && <div className="error-banner">
+              {error}
+              {status === "failed" && <div className="actions"><button onClick={reset}>New mission</button></div>}
+            </div>}
           </div>
         </section>
 
