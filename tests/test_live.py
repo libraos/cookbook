@@ -14,6 +14,7 @@ pytestmark = pytest.mark.live
 async def test_live_memory_recall_and_isolation():
     example = load_example("recipes/memory-isolation/memory_isolation.py")
     report = await example.run()
+    assert report["conversation_access_checked"]
     assert report["a_recalled"], "A's unique preference was not recalled; inspect model/Runtime memory behavior"
     assert report["b_isolated"], "B received A's unique preference"
     assert report["b_override_isolated"], "B received A's preference after an identity override attempt"

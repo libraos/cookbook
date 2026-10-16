@@ -25,15 +25,15 @@ It uploads JUnit results. This suite is deterministic and suitable for PR gating
 | Ticket Routing | Malformed JSON/schema rejected; a schema-valid wrong class is counted as a miss | Label accuracy is a model evaluation, separate from schema validity |
 | Document Q&A | Bound collection and grounding system prompt sent; in-scope and miss inputs exercised; auth failure propagates | Correct source attribution and non-fabrication still need live evidence; fixtures are not retrieval tests |
 | Tool Calling | Signed callback, known/missing order, rejected signature, duplicate callback, HTTP/transport errors | Opt-in known/missing tool calls require actual receipt evidence; separate stopped-webhook evaluation |
-| Memory | Separate tokens, fresh conversation IDs, no forwarded history, identity preflight | Opt-in positive recall and cross-user/override isolation; probabilistic recall is not a complete authorization audit |
+| Memory | Separate tokens, fresh conversation IDs, no forwarded history, identity preflight, conversation-access responses | Opt-in A conversation read/B denial, plus positive recall and cross-user/override isolation; probabilistic recall is not a complete authorization audit |
 | Async Job | Persisted idempotency/ID, uncertain submit, resume, timeout, cancellation race, terminal states and read failures | Opt-in submit/resume/completion; actual kernel restart durability is outside this client's proof |
 | Mission Decision | Pending gate, reducer failure, replay, 403 from decision endpoint | Server-side ownership/role matrix still requires a named Runtime integration test |
 | Tool Action Approval | Not implemented as a standalone tutorial yet | Approval/rejection/permission and exactly-once side effects tracked in the core repository |
 | Marketing Mission | Stream replay/reconnect, event dedup, pending decision, report and failure states | Full mission/model run remains separate from client protocol tests |
 
-The older Customer Support and Legaltech callback registration paths have a
-[contract-verification task](https://github.com/libraos/libraos/issues/1729).
-Their presence in the learning index is not a new claim of live validation.
+Customer Support and Legaltech use the bundle registration workaround validated
+in [PR #14](https://github.com/libraos/cookbook/pull/14). The REST registration
+contract still has a [follow-up task](https://github.com/libraos/libraos/issues/1729).
 
 ## Opt-in Runtime/model evaluation
 
@@ -69,9 +69,14 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
 - Mission client: Node 24 locally; CI targets Node 22 with type stripping.
 - New P0 live Runtime/model runs: **not performed**. No Runtime release is
   certified by the mocked tests.
-- Common Compose default: kernel v0.1.21. Record `/api/version` when running live;
+- Common Compose default: kernel v0.2.2. Record `/api/version` when running live;
   do not treat that default as evidence of feature parity with current source.
 - Async issue #1708: closed when checked; HTTP example retains native shapes.
+- Baseline integration: [PR #12](https://github.com/libraos/cookbook/pull/12),
+  [PR #13](https://github.com/libraos/cookbook/pull/13) and
+  [PR #14](https://github.com/libraos/cookbook/pull/14) report v0.2.2 live checks
+  for original examples. Those reported runs are distinct from this branch's
+  offline tests and do not validate the three newly added P0 recipes.
 
 For a new recipe, include level, prerequisites, dependencies, feature flags,
 observable result, failure/boundary tests, cleanup, verification status and the

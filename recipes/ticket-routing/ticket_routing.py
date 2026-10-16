@@ -21,7 +21,7 @@ the LibraOS docs: https://docs.meganova.ai → LibraOS → Use Cases → Ticket 
 
 Prerequisites::
 
-    pip install libraos-sdk
+    pip install libraos-sdk jsonschema
     export LIBRA_OS_URL=https://nova.your-company.example
     export LIBRA_OS_API_KEY=msk_live_...
 
@@ -39,6 +39,7 @@ import os
 from pathlib import Path
 
 import httpx
+from jsonschema import validate
 
 from libraos import Client
 from libraos.errors import NotFoundError
@@ -91,10 +92,12 @@ async def classify(http: httpx.AsyncClient, ticket: str) -> dict:
     """
     r = await http.post("/agents/v1/ticket-router/chat", json={"message": ticket})
     r.raise_for_status()
-    return r.json()["output"]
+    verdict = r.json()["output"]
+    validate(verdict, INTENT_SCHEMA)
+    return verdict
 
 
-async def main() -> None:
+async def main() -> dict:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
@@ -148,6 +151,8 @@ async def main() -> None:
 
         # 3. Cleanup for dev loops.
         await c.agents.delete("ticket-router")
+
+        return {"correct": correct, "total": len(labelled)}
 
 
 if __name__ == "__main__":

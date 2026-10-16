@@ -33,3 +33,21 @@ async def test_invalid_identity_fails_preflight(user):
     async with httpx.AsyncClient(base_url="http://kernel", transport=httpx.MockTransport(lambda r: httpx.Response(200, json=user))) as http:
         with pytest.raises(ValueError):
             await example.identity(http)
+
+
+@pytest.mark.parametrize("b_status", [200, 403, 404])
+async def test_conversation_boundary_requires_a_read_and_b_denial(b_status):
+    seen = []
+    def server(request):
+        seen.append(request)
+        status = 200 if request.headers["Authorization"] == "Bearer A" else b_status
+        return httpx.Response(status, json={"id": "conversation-a"})
+    transport = httpx.MockTransport(server)
+    async with httpx.AsyncClient(base_url="http://kernel", headers={"Authorization": "Bearer A"}, transport=transport) as a, httpx.AsyncClient(base_url="http://kernel", headers={"Authorization": "Bearer B"}, transport=transport) as b:
+        if b_status == 200:
+            with pytest.raises(ValueError, match="B could read"):
+                await example.conversation_boundary(a, b, "conversation-a", "a-subject")
+        else:
+            await example.conversation_boundary(a, b, "conversation-a", "a-subject")
+            assert len(seen) == 3
+            assert seen[-1].headers["X-Canonical-User"] == "a-subject"

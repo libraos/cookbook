@@ -64,7 +64,7 @@ async def test_wait_timeout_keeps_receipt_and_never_cancels(tmp_path):
     assert path.exists() and set(calls) == {"GET"}
 
 
-@pytest.mark.parametrize("delete_status,final", [(200, "cancelled"), (409, "done")])
+@pytest.mark.parametrize("delete_status,final", [(200, "cancelled"), (409, "done"), (200, "running")])
 async def test_cancel_reads_actual_state_including_completion_race(tmp_path, delete_status, final):
     path, data = receipt(tmp_path)
     data["job_id"] = "j1"

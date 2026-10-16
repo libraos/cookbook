@@ -20,7 +20,9 @@ async def ask(http: httpx.AsyncClient, order_id: str) -> dict:
     result = response.json()
     if not isinstance(result.get("response"), str):
         raise ValueError("Runtime did not return a chat response")
-    structured = json.loads(result["response"])
+    structured = result.get("output")
+    if structured is None:
+        structured = json.loads(result["response"])
     if not isinstance(structured, dict) or structured.get("order_id") != order_id or structured.get("status") not in {"in_transit", "not_found", "unavailable"}:
         raise ValueError("Order response violates the example's output contract")
     result["structured"] = structured

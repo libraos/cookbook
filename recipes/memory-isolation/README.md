@@ -6,7 +6,9 @@ normal authenticated users. Tools and Document Q&A are not prerequisites.
 The observable result is that **A recalls a unique synthetic preference in a
 fresh conversation, while B cannot recall it**. The script sends no old message
 history to the recall calls. B also attempts to select A through `X-End-User`;
-a normal user's authenticated identity must remain authoritative.
+a normal user's authenticated identity must remain authoritative. Separately,
+the script reads A's persisted conversation as A, then requires 403/404 when B
+requests that same conversation, both normally and with forged identity headers.
 
 ## Run
 
@@ -47,11 +49,12 @@ COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k memory --junitxml=live-re
 ```
 
 Offline tests prove separate bearer tokens, fresh conversation IDs, no accidental
-history forwarding, identity preflight rejection and correct override-header
-serialization. They do **not** prove server isolation.
+history forwarding, identity preflight rejection, override-header serialization
+and handling of conversation read/denial responses. They do **not** prove server isolation.
 
-Live tests combine the real authorization boundary with probabilistic model
-recall. They first require successful A recall; an empty/unavailable memory
+Live tests separate the deterministic conversation-access boundary from
+probabilistic model recall. They require a successful A conversation read and
+successful A recall; an empty/unavailable memory
 system must not count as an isolation success. An absent random label in B's
 answer is evidence for this scenario, not an exhaustive security proof. Repeat
 with different labels/models; report failures separately from protocol CI.

@@ -128,6 +128,9 @@ async def main() -> int:
         else:
             job = await jobs.wait(args.timeout)
         print(json.dumps(job, indent=2))
+        if args.action == "cancel" and job["status"] not in TERMINAL:
+            print("Cancellation has not reached a terminal state; keep the receipt and query again.")
+            return 3
         return {"failed": 1, "cancelled": 2}.get(job["status"], 0)
 
 

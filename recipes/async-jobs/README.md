@@ -89,6 +89,12 @@ cancellation test, submit a workload that remains queued/running long enough and
 use `cancel`; a fast completed job returning `done` is not a failed cancellation
 implementation.
 
+[Mission Console PR #15](https://github.com/libraos/cookbook/pull/15) reports that
+v0.2.2 can acknowledge cancellation of an orphaned job while a subsequent GET
+still reports `running`. This client therefore reads the job after DELETE and
+exits 3 if it is still nonterminal; an HTTP 200 acknowledgement is not proof of
+completed cancellation.
+
 Receipts contain task text but no credentials. After the job is terminal, remove
 the local receipt if no longer needed. This does not delete the server's job.
 Next: [Finance](../finance/) for a domain-specific input, or

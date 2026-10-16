@@ -8,11 +8,12 @@ import httpx
 import jsonschema
 import pytest
 from libraos import Client
-from libraos.errors import AuthenticationError
+from libraos.errors import AuthenticationError, LibraOSError
+from libraos.client import RetryConfig
 
 from conftest import load_example
 
-first = load_example("get-started/01-first-agent/first_agent.py")
+first = load_example("get-started/01-first-agent/first-agent.py")
 tickets = load_example("recipes/ticket-routing/ticket_routing.py")
 qa = load_example("recipes/document-qa/document_qa.py")
 
@@ -23,10 +24,10 @@ async def test_first_agent_preserves_conversation_history():
         calls.append(json.loads(request.content))
         if request.url.path == "/v1/agents":
             return httpx.Response(201, json={"id": "first-assistant"})
-        return httpx.Response(200, json={"response": "Hello", "conversation_id": "c1"})
-    async with httpx.AsyncClient(base_url="http://kernel", transport=httpx.MockTransport(server)) as http:
-        assert len(await first.run(http)) == 2
-    assert calls[2]["conversation_id"] == "c1"
+        return httpx.Response(200, json={"content": [{"type": "text", "text": "Hello"}]})
+    async with Client(base_url="http://kernel", api_key="test", transport=httpx.MockTransport(server)) as client:
+        assert len(await first.run(client)) == 2
+    assert calls[0]["tool_scope"] == "none"
     assert [m["role"] for m in calls[2]["messages"]] == ["user", "assistant", "user"]
 
 
@@ -36,27 +37,31 @@ async def test_first_agent_credential_and_model_errors_propagate(status, at_crea
         if not at_create and request.url.path == "/v1/agents":
             return httpx.Response(201, json={"id": "first-assistant"})
         return httpx.Response(status, json={"error": "unavailable"})
-    async with httpx.AsyncClient(base_url="http://kernel", transport=httpx.MockTransport(server)) as http:
-        with pytest.raises(httpx.HTTPStatusError):
-            await first.run(http)
+    async with Client(base_url="http://kernel", api_key="test", transport=httpx.MockTransport(server), retry_config=RetryConfig(max_attempts=1)) as client:
+        with pytest.raises(LibraOSError) as caught:
+            await first.run(client)
+        assert caught.value.status == status
 
 
-def test_ticket_schema_rejects_invalid_and_missing_intent():
+async def test_ticket_schema_rejects_invalid_and_missing_intent():
     for bad in [{"intent": "invented", "reasoning": "x"}, {"reasoning": "x"}]:
-        with pytest.raises(jsonschema.ValidationError):
-            tickets.parse_verdict(json.dumps(bad))
-    with pytest.raises(json.JSONDecodeError):
-        tickets.parse_verdict("not JSON")
+        async with httpx.AsyncClient(base_url="http://kernel", transport=httpx.MockTransport(lambda r: httpx.Response(200, json={"output": bad}))) as http:
+            with pytest.raises(jsonschema.ValidationError):
+                await tickets.classify(http, "a ticket")
+    async with httpx.AsyncClient(base_url="http://kernel", transport=httpx.MockTransport(lambda r: httpx.Response(422, json={"error": "output_violation"}))) as http:
+        with pytest.raises(httpx.HTTPStatusError):
+            await tickets.classify(http, "a ticket")
 
 
 async def test_ticket_wrong_classification_is_counted_separately_from_schema(monkeypatch):
     monkeypatch.setenv("LIBRA_OS_API_KEY", "test-only")
     monkeypatch.setattr(tickets, "load_labelled", lambda: [{"ticket": "Cannot sign in", "expected": "Account management"}])
     def server(request):
-        if request.url.path == "/v1/messages":
-            return httpx.Response(200, json={"content": [{"type": "text", "text": '{"intent":"Feedback","reasoning":"deliberately wrong fixture"}'}]})
+        if request.url.path == "/agents/v1/ticket-router/chat":
+            return httpx.Response(200, json={"output": {"intent": "Feedback", "reasoning": "deliberately wrong fixture"}})
         return httpx.Response(200, json={})
-    monkeypatch.setattr(tickets, "Client", lambda **kw: Client(**kw, transport=httpx.MockTransport(server)))
+    http_client = httpx.AsyncClient
+    monkeypatch.setattr(tickets.httpx, "AsyncClient", lambda **kw: http_client(**{**kw, "transport": httpx.MockTransport(server)}))
     result = await tickets.main()
     assert result == {"correct": 0, "total": 1}
 

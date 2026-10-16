@@ -34,7 +34,7 @@ r.raise_for_status()
 print(r.json()['access_token'])
 PY
 )"
-python get-started/01-first-agent/first_agent.py
+python get-started/01-first-agent/first-agent.py
 ```
 
 The token stays in the shell environment. Do not put it in source, screenshots,
