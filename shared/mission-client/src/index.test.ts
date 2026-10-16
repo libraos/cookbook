@@ -71,3 +71,17 @@ test("errors carry the kernel's message and status", async () => {
   const client = createMissionClient({ lead: "lead", fetch: async () => Response.json({ message: "workflows disabled" }, { status: 404 }) });
   await assert.rejects(client.create("x"), { message: "workflows disabled", status: 404 });
 });
+
+test("mission failure is visible and a decision does not complete work", () => {
+  let state = reduceMission(initialMissionState(), { type: "approval.required", metadata: { decision: { id: "gate", question: "Proceed?" } } }, 1);
+  assert.equal(state.status, "waiting_approval");
+  assert.equal(state.report, "");
+  state = reduceMission(state, { type: "error", content: "Research failed" }, 2);
+  assert.equal(state.status, "failed");
+  assert.equal(state.error, "Research failed");
+});
+
+test("a denied mission decision surfaces the permission error", async () => {
+  const client = createMissionClient({ lead: "lead", fetch: async () => Response.json({ message: "forbidden" }, { status: 403 }) });
+  await assert.rejects(client.resolveDecision("job", "gate", "approve"), { status: 403, message: "forbidden" });
+});

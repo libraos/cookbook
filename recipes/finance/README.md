@@ -4,7 +4,7 @@ End-to-end worked example: a financial-services partner submits two consecutive 
 
 ## What this demonstrates
 
-- **Async jobs (`POST /agents/v1/{agent}/jobs`, then `GET …/jobs/{job_id}`)** — the partner submits the job, gets a `job_id` back immediately, polls until `status == "done"`, and reads the structured result from `result`. Called over HTTP for now: the SDK's `jobs` resource targets a route the server does not serve yet (libraos/libraos#1708). Avoids 30+ second HTTP timeouts on long analyses.
+- **Async jobs (`POST /agents/v1/{agent}/jobs`, then `GET …/jobs/{job_id}`)** — submit, obtain a `job_id`, poll until `status == "done"`, and read `result`. This recipe retains native HTTP for compatibility with older kernels. [#1708](https://github.com/libraos/libraos/issues/1708) is now closed; validate the managed route on your deployed version before switching to SDK jobs. Learn the independent recovery pattern first in [Async Jobs](../async-jobs/).
 - **`web_search_config` for live enrichment** — the agent is allowed to issue a small budget of web-search calls during analysis (e.g., look up the current ticker price, recent material 8-K filings) and cite each web source inline alongside the user-provided text.
 - **Structured output + a "material change" rubric** — the schema constrains the agent to a fixed taxonomy (revenue, leverage, segment-mix, going-concern, etc.) so downstream analyst tooling can pivot the result reliably.
 

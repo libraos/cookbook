@@ -15,7 +15,7 @@ the LibraOS docs: https://docs.meganova.ai → LibraOS → Use Cases → Ticket 
 
 Prerequisites::
 
-    pip install libraos-sdk
+    pip install libraos-sdk jsonschema
     export LIBRA_OS_URL=https://nova.your-company.example
     export LIBRA_OS_API_KEY=msk_live_...
 
@@ -34,6 +34,7 @@ from pathlib import Path
 
 from libraos import Client
 from libraos.errors import NotFoundError
+from jsonschema import validate
 
 
 # The contract every classification is validated against. `on_violation=repair`
@@ -73,7 +74,13 @@ def load_labelled() -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
-async def main() -> None:
+def parse_verdict(text: str) -> dict:
+    verdict = json.loads(text)
+    validate(verdict, INTENT_SCHEMA)
+    return verdict
+
+
+async def main() -> dict:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
 
@@ -104,7 +111,7 @@ async def main() -> None:
             brain=False,
             description="Classifies a support ticket into a single primary intent label.",
             output_type={"schema_inline": INTENT_SCHEMA, "on_violation": "repair"},
-            instructions=(
+            system=(
                 "You are a support-ticket classifier. Read the ticket and identify "
                 "its primary intent. Always write your reasoning before choosing a "
                 "category. If a ticket raises several issues, classify by the most "
@@ -121,7 +128,7 @@ async def main() -> None:
                 messages=[{"role": "user", "content": item["ticket"]}],
                 metadata={"agent_id": "ticket-router"},
             )
-            verdict = json.loads(resp.text)
+            verdict = parse_verdict(resp.text)
             got = verdict["intent"]
             ok = got == item["expected"]
             correct += ok
@@ -137,6 +144,7 @@ async def main() -> None:
         # 4. Cleanup for dev loops.
         await c.agents.delete("ticket-router")
         await c.employees.delete("support-desk")
+        return {"correct": correct, "total": len(labelled)}
 
 
 if __name__ == "__main__":

@@ -162,8 +162,8 @@ async def main() -> None:
         )
 
         # 2. Kick off the async job: POST /agents/v1/{agent}/jobs. It is called
-        #    directly here because the SDK's jobs resource targets a route the
-        #    server does not serve yet (libraos/libraos#1708).
+        #    directly for older-kernel compatibility. #1708 is now closed;
+        #    verify managed-route support before switching the deployed API.
         payload = {
             "ticker": "ACME",
             "comparison_period": "FY2025 vs FY2026",

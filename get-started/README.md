@@ -3,9 +3,14 @@
 Run a LibraOS kernel on your laptop and build on it, one small example at a
 time.
 
+Follow the [learning paths](../docs/learning-paths.md): First Agent → Ticket
+Routing → choose Knowledge, Tools or Memory. Sign-in below is an optional
+application-development branch. For Python recipes, use the
+[shared environment and local token setup](../docs/recipe-setup.md).
+
 | Example | What it shows |
 |---|---|
-| [`01-first-agent/`](01-first-agent/) | Create an agent and talk to it: a token, one `POST /v1/agents`, one chat call. Bash (`first-agent.sh`) or TypeScript (`first-agent.ts`). |
+| [`01-first-agent/`](01-first-agent/) | Create an agent and talk to it. Bash (`first-agent.sh`), TypeScript (`first-agent.ts`), or Python (`first_agent.py`). |
 | [`02-sign-in-with-libraos/`](02-sign-in-with-libraos/) | A browser app that signs a person in with LibraOS (OIDC + PKCE, written by hand) and shows who they are. |
 | [`../apps/personal-assistant/`](../apps/personal-assistant/) | Everything together: a signed-in user chats with an app's agent that knows their documents and remembers them. |
 

@@ -114,7 +114,7 @@ async def main() -> None:
             knowledge_bindings=[COLLECTION],
             knowledge_gate=True,
             description="Answers employee questions strictly from the company handbook, with citations.",
-            instructions=(
+            system=(
                 "You are an HR handbook copilot. Answer ONLY from the retrieved handbook "
                 "passages and cite the source for each fact. If the handbook does not cover "
                 "the question, say so plainly — never guess a policy or invent a number."
