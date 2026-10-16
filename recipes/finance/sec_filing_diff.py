@@ -1,8 +1,8 @@
 """Finance — 10-K filing year-over-year diff with async-job pattern.
 
 End-to-end partner-side script:
-    1. Creates a `filing-analyst` agent with web_search enabled (small budget)
-       and a structured output schema covering the analyst-ready material
+    1. Creates a `filing-analyst` agent that may call `search_web` and whose
+       reply follows a structured schema covering the analyst-ready material
        changes taxonomy.
     2. Submits an async job containing two 10-K Item 1A excerpts (FY2025 +
        FY2026). Returns immediately with a job_id.
@@ -106,6 +106,19 @@ SAMPLE_2025 = Path(__file__).with_name("sample_10k_2025.txt")
 SAMPLE_2026 = Path(__file__).with_name("sample_10k_2026.txt")
 
 
+def parse_json_reply(text: str) -> dict:
+    """Parse the JSON object in a job result.
+
+    `output_type` is validated on the synchronous chat endpoints; a job's
+    `result` is the agent's reply as written, so tolerate a ```json fence or a
+    sentence around the object.
+    """
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError(f"no JSON object in job result: {text[:200]!r}")
+    return json.loads(text[start : end + 1])
+
+
 async def main() -> None:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
@@ -114,50 +127,33 @@ async def main() -> None:
     fy2026 = SAMPLE_2026.read_text(encoding="utf-8")
 
     async with Client(base_url=base_url, api_key=api_key) as c:
-        # Start clean: a run that failed part-way leaves these behind, and the
-        # create calls below would then fail with 409.
-        for remove, name in ((c.agents.delete, "filing-analyst"), (c.employees.delete, "filings-research")):
-            with contextlib.suppress(NotFoundError):
-                await remove(name)
+        # Start clean: a run that failed part-way leaves this behind, and the
+        # create call below would then fail with 409.
+        with contextlib.suppress(NotFoundError):
+            await c.agents.delete("filing-analyst")
 
-        # 1. Set up the employee + agent.
-        await c.employees.create(
-            id="filings-research",
-            display_name="Filings Research",
-            model_config={
-                "answer": {
-                    "primary": "anthropic/claude-opus-4-7",
-                    "fallback": ["gemini/gemini-2.5-pro"],
-                },
-                "skill": {
-                    "primary": "gemini/gemini-2.5-flash",
-                    "fallback": ["anthropic/claude-haiku-4-5"],
-                },
-            },
-        )
-
+        # 1. The analyst. `tools=["search_web"]` scopes it to web search alone
+        #    (the backend — Tavily, Brave, SearXNG… — is a kernel setting, see
+        #    README). The schema is declared as `output_type`, which the chat
+        #    endpoints validate, and repeated in the system prompt because a
+        #    job's `result` is the reply as the model wrote it.
         await c.agents.create(
             id="filing-analyst",
             type="skill",
-            owner_employee="filings-research",
-            description=(
-                "Performs year-over-year diff on 10-K Item 1A risk factors, "
-                "identifies material changes by analyst-relevant category, "
-                "and cites live web sources for context where relevant."
-            ),
+            brain=False,
+            tools=["search_web"],
             output_type={"schema_inline": DIFF_SCHEMA, "on_violation": "repair"},
-            web_search_config={
-                "enabled": True,
-                "max_calls_per_run": 5,
-                "preferred_engine": "tavily",
-            },
-            instructions=(
-                "Compare two 10-K Item 1A excerpts from the same issuer. "
-                "Identify every material change. Use web_search sparingly to "
-                "look up tickers, recent 8-K filings, or material peer-context "
-                "data — every web source must appear in web_citations with a "
-                "verbatim snippet. Do not invent figures. If a change is "
-                "ambiguous, classify direction as neutral and explain why."
+            system=(
+                "You are a filings analyst. Compare two 10-K Item 1A excerpts "
+                "from the same issuer and identify every material change. Use "
+                "search_web sparingly (at most a few calls) to look up the "
+                "ticker, recent 8-K filings or peer context — every web source "
+                "used must appear in web_citations with a verbatim snippet; if "
+                "search is unavailable, leave web_citations empty. Do not invent "
+                "figures. If a change is ambiguous, classify its direction as "
+                "neutral and explain why. Reply with exactly one JSON object "
+                "and nothing else, valid against this JSON Schema:\n"
+                + json.dumps(DIFF_SCHEMA)
             ),
         )
 
@@ -172,7 +168,7 @@ async def main() -> None:
         }
         jobs_path = "/agents/v1/filing-analyst/jobs"
         async with httpx.AsyncClient(
-            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=30
+            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=60
         ) as http:
             r = await http.post(
                 jobs_path,
@@ -187,7 +183,7 @@ async def main() -> None:
             # 3. Poll until it finishes. Production code should cap polling at a
             #    sensible budget and surface progress to the UI (or follow
             #    GET {jobs_path}/{job_id}/stream instead of polling).
-            for attempt in range(60):  # 60 * 5s = 5 min ceiling
+            for attempt in range(120):  # 120 * 5s = 10 min ceiling
                 job = (await http.get(f"{jobs_path}/{job_id}")).json()
                 print(f"  [{attempt:>2}] status={job['status']}")
                 if job["status"] in ("done", "failed", "cancelled"):
@@ -202,14 +198,13 @@ async def main() -> None:
             print(f"Job did not complete cleanly: status={job['status']} error={job.get('error')!r}")
             return
 
-        # 4. Print the validated diff.
+        # 4. Print the diff.
         print()
         print("Material changes:")
-        print(json.dumps(json.loads(job["result"]), indent=2))
+        print(json.dumps(parse_json_reply(job["result"]), indent=2))
 
         # 5. Optional cleanup.
         await c.agents.delete("filing-analyst")
-        await c.employees.delete("filings-research")
 
 
 if __name__ == "__main__":

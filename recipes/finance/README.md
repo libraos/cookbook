@@ -5,8 +5,8 @@ End-to-end worked example: a financial-services partner submits two consecutive 
 ## What this demonstrates
 
 - **Async jobs (`POST /agents/v1/{agent}/jobs`, then `GET …/jobs/{job_id}`)** — submit, obtain a `job_id`, poll until `status == "done"`, and read `result`. This recipe retains native HTTP for compatibility with older kernels. [#1708](https://github.com/libraos/libraos/issues/1708) is now closed; validate the managed route on your deployed version before switching to SDK jobs. Learn the independent recovery pattern first in [Async Jobs](../async-jobs/).
-- **`web_search_config` for live enrichment** — the agent is allowed to issue a small budget of web-search calls during analysis (e.g., look up the current ticker price, recent material 8-K filings) and cite each web source inline alongside the user-provided text.
-- **Structured output + a "material change" rubric** — the schema constrains the agent to a fixed taxonomy (revenue, leverage, segment-mix, going-concern, etc.) so downstream analyst tooling can pivot the result reliably.
+- **`search_web` for live enrichment** — `tools=["search_web"]` scopes the agent to web search alone, so it can look up the ticker, recent 8-K filings or peer context and cite each web source alongside the user-provided text. The search backend is a kernel setting (`TAVILY_API_KEY`, `BRAVE_API_KEY`, `SEARXNG_URL`, … or `LIBRA_OS_WEB_SEARCH`); on a kernel without one the tool returns no results and `web_citations` stays empty.
+- **Structured output + a "material change" rubric** — the schema constrains the agent to a fixed taxonomy (revenue, leverage, segment-mix, going-concern, etc.) so downstream analyst tooling can pivot the result reliably. The schema is declared as `output_type`, which the chat endpoints validate, and repeated in the system prompt: a job's `result` is the reply as the model wrote it, so the script parses the JSON object out of it (`parse_json_reply`).
 
 ## Files
 
@@ -18,6 +18,8 @@ End-to-end worked example: a financial-services partner submits two consecutive 
 
 ## Run
 
+Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
+
 ```bash
 pip install libraos-sdk
 export LIBRA_OS_URL=https://nova.your-company.example
@@ -25,7 +27,7 @@ export LIBRA_OS_API_KEY=msk_live_...
 python sec_filing_diff.py
 ```
 
-You'll see the script submit the job, poll status every 5 seconds for ~1-2 minutes, and finally print:
+You'll see the script submit the job, poll status every 5 seconds (typically well under a minute; up to a few minutes with web search), and finally print:
 
 ```json
 {
@@ -42,6 +44,8 @@ You'll see the script submit the job, poll status every 5 seconds for ~1-2 minut
   "web_citations": [...]
 }
 ```
+
+A smoke check: `python sec_filing_diff.py | grep overall_risk_delta`.
 
 ## Adapting to your data
 

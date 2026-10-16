@@ -4,9 +4,9 @@ End-to-end worked example: a partner sends raw ticket text to a classifier agent
 
 ## What this demonstrates
 
-- **`output_type` JSON-schema validation** — every classification is validated server-side against an enum contract before it leaves LibraOS. Your routing logic acts on `intent`; you never parse free text or handle a model that invents a category.
-- **`on_violation=repair`** — if the first reply doesn't conform, LibraOS re-prompts once with the schema in the system prompt instead of returning a 422. For a high-volume classifier that one bounded retry is cheaper than error handling on your side.
-- **`brain=false`** — classification is one short call: one ticket in, one verdict out. Skipping the planner keeps it on the fast, cheap skill tier at ~a second per ticket.
+- **`output_type` JSON-schema validation** — every classification is validated server-side against an enum contract before it leaves LibraOS. Your routing logic acts on `intent`; you never parse free text or handle a model that invents a category. The validation runs on the agent chat endpoint, `POST /agents/v1/<agent>/chat`, which returns the parsed object as `output` — that is the call the loop makes. (`/v1/messages` returns the reply as the model wrote it.)
+- **`on_violation=repair`** — if the first reply doesn't conform, LibraOS re-prompts once with the schema in the system prompt instead of returning a 422. For a high-volume classifier that one bounded retry is cheaper than error handling on your side. The schema is also in the system prompt, so the first reply usually conforms and the retry stays rare.
+- **`brain=false` + `tool_scope="none"`** — classification is one short call: one ticket in, one verdict out. Skipping the planner keeps it on the fast, cheap skill tier, and declaring that the agent needs no tools keeps the tool catalog out of the prompt (an agent that declares nothing is offered every tool, which is slower and occasionally tool-happy).
 - **An accuracy eval loop** — the gate you run against a hand-labelled set *before* pointing live traffic at the classifier, plus the miss-analysis habit that tells you exactly what to fix.
 
 ## Files
@@ -17,6 +17,8 @@ End-to-end worked example: a partner sends raw ticket text to a classifier agent
 | `sample_tickets.jsonl` | 10 labelled tickets (`{"ticket": ..., "expected": ...}`) as a starter validation set |
 
 ## Run
+
+Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
 
 ```bash
 pip install libraos-sdk jsonschema
@@ -34,6 +36,8 @@ You'll see a per-ticket pass/fail line and a final accuracy figure:
 
 Accuracy: 9/10 = 90%
 ```
+
+The exact figure depends on the model the kernel routes the skill tier to (`LIBRA_OS_SKILL_MODEL`). A smoke check is the last line: `python ticket_routing.py | grep Accuracy`.
 
 ## Adapting to your data
 

@@ -10,6 +10,11 @@ End-to-end partner-side script:
        isolation — patient A's conversation history never bleeds into B's).
     3. Prints the validated triage decision.
 
+`output_type` is enforced on the agent chat endpoint, `POST
+/agents/v1/{agent}/chat`: it validates the reply against the schema, runs the
+`repair` retry, and returns the parsed object as `output`. That is the call the
+loop below makes; `/v1/messages` returns the reply as the model wrote it.
+
 Prerequisites::
 
     pip install 'libraos-sdk>=2.0.0'
@@ -28,6 +33,8 @@ import contextlib
 import json
 import os
 from pathlib import Path
+
+import httpx
 
 from libraos import Client
 from libraos.errors import NotFoundError
@@ -87,78 +94,64 @@ async def main() -> None:
     patient_id = "PT-2026-0942"
 
     async with Client(base_url=base_url, api_key=api_key) as c:
-        # Start clean: a run that failed part-way leaves these behind, and the
-        # create calls below would then fail with 409.
-        for remove, name in ((c.agents.delete, "clinical-triage"), (c.employees.delete, "triage-clinician")):
-            with contextlib.suppress(NotFoundError):
-                await remove(name)
+        # Start clean: a run that failed part-way leaves this behind, and the
+        # create call below would then fail with 409.
+        with contextlib.suppress(NotFoundError):
+            await c.agents.delete("clinical-triage")
 
-        # 1. Create the digital employee. Answer model on Opus for clinical
-        #    reasoning; skill model on Flash for the schema-validation retry.
-        await c.employees.create(
-            id="triage-clinician",
-            display_name="Triage Clinician",
-            model_config={
-                "answer": {
-                    "primary": "anthropic/claude-opus-4-7",
-                    "fallback": ["gemini/gemini-2.5-pro"],
-                },
-                "skill": {
-                    "primary": "gemini/gemini-2.5-flash",
-                    "fallback": ["anthropic/claude-haiku-4-5"],
-                },
-            },
-        )
-
-        # 2. Attach the triage agent. `output_type.on_violation=repair` means
-        #    if the model's first reply doesn't match TRIAGE_SCHEMA, LibraOS
-        #    re-prompts once with the schema in the system prompt before
-        #    returning the result. Better than a 422 in a clinical workflow.
+        # 1. The triage agent. `output_type.on_violation=repair` means if the
+        #    model's first reply doesn't match TRIAGE_SCHEMA, LibraOS re-prompts
+        #    once with the schema in the system prompt before returning the
+        #    result. Better than a 422 in a clinical workflow.
+        #    brain=false: one note in, one decision out, on the kernel's
+        #    skill-tier model. tool_scope="none": triage needs no tools.
         await c.agents.create(
             id="clinical-triage",
             type="skill",
-            owner_employee="triage-clinician",
-            description=(
-                "Triages clinical notes into a structured urgency + suggested-action "
-                "decision. Outputs are validated against a hard JSON Schema contract."
-            ),
+            brain=False,
+            tool_scope="none",
             output_type={"schema_inline": TRIAGE_SCHEMA, "on_violation": "repair"},
-            instructions=(
+            system=(
                 "You are a clinical triage decision-support tool. Read the note, "
                 "identify red flags using standard clinical-decision keywords, and "
                 "produce a triage decision. Be conservative — when in doubt, escalate. "
                 "Never fabricate findings not in the note. The patient_id field MUST "
-                "match the X-End-User header value passed by the partner."
+                "match the Patient ID given in the request. Reply with exactly one "
+                "JSON object and nothing else, valid against this JSON Schema:\n"
+                + json.dumps(TRIAGE_SCHEMA)
             ),
         )
 
-        # 3. Send the note. The patient identifier flows on the request as
-        #    X-End-User so the agent's observational memory is scoped per
-        #    patient — A's prior visits never bleed into B's reasoning.
-        resp = await c.messages.create(
-            agent_id="clinical-triage",
-            messages=[
-                {
-                    "role": "user",
-                    "content": (
+        # 2. Send the note to the agent chat endpoint, which validates the
+        #    reply against TRIAGE_SCHEMA (re-prompting once on a violation)
+        #    and returns the parsed object as `output`. The patient identifier
+        #    flows on the request as X-End-User so the agent's observational
+        #    memory is scoped per patient — A's prior visits never bleed into
+        #    B's reasoning. A clinical note is a long prompt and `repair` may
+        #    add a second pass: give the call room.
+        async with httpx.AsyncClient(
+            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=300
+        ) as http:
+            r = await http.post(
+                "/agents/v1/clinical-triage/chat",
+                json={
+                    "message": (
                         f"Patient ID: {patient_id}\n\n"
                         f"Clinical note (deidentified):\n\n{note_text}\n\n"
                         f"Produce a triage decision."
-                    ),
-                }
-            ],
-            metadata={"agent_id": "clinical-triage"},
-            end_user=patient_id,
-        )
+                    )
+                },
+                headers={"X-End-User": patient_id},
+            )
+            r.raise_for_status()  # 422 output_violation if repair also fails
 
-        # 4. Validated structured output — partners can json.loads directly.
-        decision = json.loads(resp.text)
+        # 3. Validated structured output — `output` is already the parsed object.
+        decision = r.json()["output"]
         print("Triage decision:")
         print(json.dumps(decision, indent=2))
 
-        # 5. Optional cleanup for dev loops.
+        # 4. Optional cleanup for dev loops.
         await c.agents.delete("clinical-triage")
-        await c.employees.delete("triage-clinician")
 
 
 if __name__ == "__main__":

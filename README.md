@@ -68,7 +68,8 @@ Reusable teams: a director, specialist agents, knowledge, safety rules and the m
 
 ## Recipes
 
-Each recipe is the runnable companion to a LibraOS docs use-case guide (linked in its README) — prose there, working code here.
+Each recipe includes its setup and observable result. Original use-case recipes
+also link to their LibraOS documentation companion.
 
 ### Use-case recipes
 
@@ -79,8 +80,8 @@ Each recipe is the runnable companion to a LibraOS docs use-case guide (linked i
 | [`recipes/memory-isolation/`](recipes/memory-isolation/) | **L2 Memory:** fresh-conversation recall with two ordinary authenticated users and an identity-override boundary check |
 | [`recipes/async-jobs/`](recipes/async-jobs/) | **L3 Async:** native HTTP submission, saved recovery receipt, bounded polling and explicit cancellation |
 | [`recipes/content-moderation/`](recipes/content-moderation/) | Risk-score UGC (`allow`/`flag`/`block` + score) with `output_type`, layered on the built-in AI Firewall |
-| [`recipes/document-qa/`](recipes/document-qa/) | Grounded, cited answers over ingested documents with `knowledge_bindings` + `knowledge_gate` (and honest refusal on a miss) |
-| [`recipes/customer-support/`](recipes/customer-support/) | A persona that answers from a KB **and** calls a Mode B custom-tool webhook for live order status, with guardrails on |
+| [`recipes/document-qa/`](recipes/document-qa/) | Grounded, cited answers over ingested documents with `knowledge_bindings` (and honest refusal on a miss) |
+| [`recipes/customer-support/`](recipes/customer-support/) | An agent, imported as an employee bundle, that answers from a KB **and** calls a Mode B custom-tool webhook for live order status, with guardrails on |
 
 ### Vertical worked examples
 
@@ -88,7 +89,7 @@ Each recipe is the runnable companion to a LibraOS docs use-case guide (linked i
 |---|---|
 | [`recipes/legaltech/`](recipes/legaltech/) | Contract clause extraction with structured output + a Mode B custom-tool webhook for partner-side precedent lookup |
 | [`recipes/healthcare/`](recipes/healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-end-user identity passthrough for HIPAA-style isolation |
-| [`recipes/finance/`](recipes/finance/) | 10-K filing diff using the async-job pattern for long documents, with `web_search_config` for live market-data enrichment |
+| [`recipes/finance/`](recipes/finance/) | 10-K filing diff using the async-job pattern for long documents, with `search_web` for live market-data enrichment |
 
 ## Common prerequisites (recipes)
 
@@ -108,8 +109,10 @@ All sample inputs are **synthetic**. The legaltech MSA, the healthcare clinical 
 
 The Python protocol suite pins SDK **2.0.0** and its direct test dependencies in
 `requirements-dev.txt`. New examples list their runtime dependencies separately.
-The local Compose environment currently defaults to kernel **v0.1.21**; a Compose
-pin is not evidence that every new recipe passed a live run on that release.
+The local Compose environment defaults to kernel **v0.2.2**. Original examples
+record their v0.2.2 smoke checks in their READMEs; the three new P0 examples have
+offline protocol tests and await their own live verification. A Compose pin is
+not evidence that every new recipe passed a live run on that release.
 See the [verification record](docs/validation.md) for the distinction.
 
 Implementation and Runtime issues are tracked in

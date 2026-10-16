@@ -2,8 +2,9 @@
 
 Pairs with `contract_clause_extraction.py`. Every time the agent calls the
 `lookup_clause_precedent` tool, LibraOS POSTs a signed JSON payload here.
-The HMAC-SHA256 signature is verified by `WebhookRouter` before the handler
-runs.
+The HMAC-SHA256 signature (`X-LibraOS-Signature`, or the older
+`X-Nova-Signature`) is verified by `WebhookRouter` before the handler runs; a
+bad signature is a 401.
 
 In production: replace the in-memory `_PRECEDENT_DB` lookup with a real
 query against your clause database (Postgres + pgvector, OpenSearch, or
@@ -12,7 +13,7 @@ whatever your legal-tech stack uses). The handler signature is unchanged.
 Prerequisites::
 
     pip install libraos-sdk fastapi uvicorn
-    export LIBRA_OS_CB_SECRET=<copy from LibraOS dashboard or generate locally>
+    export LIBRA_OS_CB_SECRET=<the value of LIBRA_OS_CALLBACK_SECRET_LEGAL on the LibraOS host>
 
 Run::
 
