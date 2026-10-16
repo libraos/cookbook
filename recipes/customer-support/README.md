@@ -19,8 +19,10 @@ End-to-end worked example: a support persona that answers product and policy que
 
 ## Run
 
+Needs `libraos-sdk` 2.0 or later: `end_user=` on `messages.create` is new in 2.0.
+
 ```bash
-pip install libraos-sdk fastapi uvicorn
+pip install 'libraos-sdk>=2.0.0' fastapi uvicorn
 export LIBRA_OS_URL=https://nova.your-company.example
 export LIBRA_OS_API_KEY=msk_live_...
 export LIBRA_OS_CB_SECRET=change-me

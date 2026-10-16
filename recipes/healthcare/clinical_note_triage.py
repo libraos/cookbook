@@ -12,7 +12,7 @@ End-to-end partner-side script:
 
 Prerequisites::
 
-    pip install libraos-sdk
+    pip install 'libraos-sdk>=2.0.0'
     export LIBRA_OS_URL=https://nova.your-company.example
     export LIBRA_OS_API_KEY=msk_live_...
 
@@ -148,8 +148,7 @@ async def main() -> None:
                 }
             ],
             metadata={"agent_id": "clinical-triage"},
-            # Per-end-user memory needs the X-End-User header, which the SDK's
-            # messages.create does not send yet; memory here is per API key + agent.
+            end_user=patient_id,
         )
 
         # 4. Validated structured output — partners can json.loads directly.
