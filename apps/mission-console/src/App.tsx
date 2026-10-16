@@ -83,6 +83,9 @@ function eventText(event: MissionEvent, lead: string): string | null {
     "report.synthesis_started": `${lead} started final synthesis`,
     "report.completed": "Final report is ready",
     "mission.completed": "Mission completed",
+    "error": `Mission failed: ${event.content ?? "no details"}`,
+    "failed": `Mission failed: ${event.content ?? "no details"}`,
+    "cancelled": "Mission cancelled",
   };
   return labels[event.type] ?? null;
 }
@@ -112,15 +115,23 @@ export function App({ initialError }: { initialError: string | null }) {
     if (!active) return;
     const controller = new AbortController();
     streamAbort.current = controller;
-    let last = 0;
     client.stream(active.jobID, (event, sequence) => {
-      if (sequence && sequence <= last) return;
-      last = Math.max(last, sequence);
       setMission((state) => reduceMission(state, event, sequence));
       const text = eventText(event, selected.leadName);
-      if (text) setActivities((items) => [...items, { sequence, type: event.type, text }].slice(-60));
+      // A restarted stream replays the log from the start; the reducer ignores
+      // replayed sequences, and so must the activity list.
+      if (text) setActivities((items) => (sequence && sequence <= (items.at(-1)?.sequence ?? 0)) ? items : [...items, { sequence, type: event.type, text }].slice(-60));
       if (event.type === "mission.created" && event.content) saveActiveMission({ ...active, objective: event.content });
-    }, controller.signal).catch((cause) => {
+    }, controller.signal).then((job) => {
+      // The stream closed on a terminal job. The events normally carry the
+      // outcome; if they did not (for example the worker died), use the job's.
+      if (controller.signal.aborted) return;
+      setMission((state) => {
+        if (state.status === "completed" || state.status === "failed") return state;
+        if (job.status === "done" && job.result) return { ...state, status: "completed", report: job.result };
+        return { ...state, status: "failed", error: job.error || `Mission ${job.status} without a report` };
+      });
+    }).catch((cause) => {
       if (!controller.signal.aborted) onError(cause);
     });
     return () => controller.abort();

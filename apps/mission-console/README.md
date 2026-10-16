@@ -12,21 +12,20 @@ The console is the [digital marketing team](../digital-marketing-team/) app gene
 
 ## Run it
 
-The kernel needs the mission workflow, PostgreSQL, and an OIDC client for the console:
+The console runs against the kernel from [`get-started/`](../../get-started/), which already enables the mission workflow (`LIBRA_OS_WORKFLOWS_ENABLED=true`) and PostgreSQL. Register the console as an OIDC client by appending it to the `LIBRA_OS_OIDC_CLIENTS` list in `get-started/.env`, then restart the kernel from `get-started/` (`docker compose up -d --force-recreate libraos`):
 
 ```dotenv
-LIBRA_OS_WORKFLOWS_ENABLED=true
-LIBRA_OS_OIDC_CLIENTS=mission-console=http://localhost:5182/callback
+LIBRA_OS_OIDC_CLIENTS=signin-example=http://localhost:5173/callback,…,mission-console=http://localhost:5182/callback
 ```
 
-Create a demo user and seed the marketing knowledge with the marketing app's setup script. It uses the same kernel and `.env` as [`get-started/`](../../get-started/):
+Create a demo user and seed the marketing knowledge with the marketing app's setup script. It reads the same `.env`:
 
 ```bash
 DM_DEMO_PASSWORD='choose-a-12-character-password' \
   apps/digital-marketing-team/scripts/setup.sh
 ```
 
-Then start the console:
+Then start the console (Node 22.12 or newer):
 
 ```bash
 cd apps/mission-console
@@ -34,9 +33,13 @@ npm install
 npm run dev        # http://localhost:5182, proxies /oauth, /agents and /api to LIBRA_OS_URL (default http://localhost:8900)
 ```
 
-To reuse an existing OIDC client, set `VITE_LIBRA_OS_CLIENT_ID`. Its redirect URI must point to this app's `/callback`.
+If the kernel listens elsewhere (a different `LIBRAOS_PORT`, or another machine), point the proxy at it: `LIBRA_OS_URL=http://localhost:9000 npm run dev`, or put `LIBRA_OS_URL=…` in `apps/mission-console/.env`.
 
-A mission in progress survives reloads: the URL carries `?mission=…&job=…`, and the console replays the job's stored events before following live work.
+Sign in as the demo user, start the prefilled mission, and answer the decision the Head of Marketing brings back. To reuse an existing OIDC client, set `VITE_LIBRA_OS_CLIENT_ID`. Its redirect URI must point to this app's `/callback`.
+
+A mission in progress survives reloads: the URL carries `?mission=…&job=…`, and the console replays the job's stored events before following live work. A dropped stream resumes from the last event. If the kernel ends the job without a report (for example the model returned an invalid plan), the console shows the kernel's error and offers a new mission.
+
+The model matters: mission planning asks the brain model for a strict JSON task graph, and the task runs use the skill model's tool calls. A small or quantized model may return a plan the kernel rejects (`mission planning returned an invalid plan: …`); the console reports that as a failed mission, so retry or use a stronger model.
 
 ## Add a mission
 

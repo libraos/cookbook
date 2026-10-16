@@ -67,6 +67,71 @@ test("stream reconnects with Last-Event-ID and stops when the job is done", asyn
   assert.deepEqual(streams[1].init?.headers, { "Last-Event-ID": "2" });
 });
 
+test("a terminal receipt without a report marks the mission failed", () => {
+  const planned = reduceMission(initialMissionState(), { type: "mission.planned", metadata: { plan } }, 1);
+  let state = reduceMission(planned, { type: "error", content: "mission planning returned an invalid plan" }, 2);
+  assert.equal(state.status, "failed");
+  assert.equal(state.error, "mission planning returned an invalid plan");
+  state = reduceMission(state, { type: "done", content: "", metadata: { status: "failed" } }, 3);
+  assert.equal(state.error, "mission planning returned an invalid plan", "the receipt keeps the error event's message");
+  state = reduceMission(planned, { type: "cancelled", content: "", metadata: { status: "cancelled" } }, 2);
+  assert.deepEqual([state.status, state.error], ["failed", "Mission cancelled"]);
+  state = reduceMission(planned, { type: "done", content: "# Report", metadata: { status: "done" } }, 2);
+  assert.deepEqual([state.status, state.report], ["completed", "# Report"]);
+});
+
+test("stream resumes after a dropped connection and rejects when aborted", async () => {
+  const headers: (HeadersInit | undefined)[] = [];
+  let calls = 0;
+  const fake = async (path: string, init?: RequestInit) => {
+    if (!path.endsWith("/stream")) return Response.json({ job_id: "job_1", status: calls < 2 ? "running" : "done" });
+    headers.push(init?.headers);
+    calls++;
+    if (calls === 1) return new Response(frame(1, { type: "mission.created" }) + ": nova-heartbeat\n\n" + "id: 2\nevent: task"); // cut mid-frame
+    if (calls === 2) throw new TypeError("network error");
+    return new Response(frame(2, { type: "task.started" }) + frame(3, { type: "done", metadata: { status: "done" } }));
+  };
+  const client = createMissionClient({ lead: "lead", fetch: fake });
+  const seen: number[] = [];
+  const job = await client.stream("job_1", (_e, seq) => seen.push(seq));
+  assert.equal(job.status, "done");
+  assert.deepEqual(seen, [1, 2, 3], "the partial frame is not delivered; the retry replays it");
+  assert.deepEqual(headers.slice(1), [{ "Last-Event-ID": "1" }, { "Last-Event-ID": "1" }]);
+
+  class SignedOut extends Error {}
+  const signedOut = createMissionClient({ lead: "lead", fetch: async () => { throw new SignedOut(); } });
+  await assert.rejects(signedOut.stream("job_1", () => {}), SignedOut, "application errors are not retried");
+
+  const controller = new AbortController();
+  const hanging = async (_path: string, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+    init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
+  });
+  const pending = createMissionClient({ lead: "lead", fetch: hanging }).stream("job_1", () => {}, controller.signal);
+  controller.abort();
+  await assert.rejects(pending, { name: "AbortError" });
+});
+
+test("stream reconnects when the connection goes silent", async () => {
+  const headers: (HeadersInit | undefined)[] = [];
+  let calls = 0;
+  const fake = async (path: string, init?: RequestInit) => {
+    if (!path.endsWith("/stream")) return Response.json({ job_id: "job_1", status: "done" });
+    headers.push(init?.headers);
+    if (++calls === 1) {
+      // One event, then nothing: no heartbeat and no close, like a proxy holding a dead upstream.
+      return new Response(new ReadableStream({
+        start(controller) { controller.enqueue(new TextEncoder().encode(frame(1, { type: "mission.created" }))); },
+      }));
+    }
+    return new Response(frame(2, { type: "done", metadata: { status: "done" } }));
+  };
+  const seen: number[] = [];
+  const job = await createMissionClient({ lead: "lead", fetch: fake, idleTimeoutMs: 50 }).stream("job_1", (_e, seq) => seen.push(seq));
+  assert.equal(job.status, "done");
+  assert.deepEqual(seen, [1, 2]);
+  assert.deepEqual(headers[1], { "Last-Event-ID": "1" });
+});
+
 test("errors carry the kernel's message and status", async () => {
   const client = createMissionClient({ lead: "lead", fetch: async () => Response.json({ message: "workflows disabled" }, { status: 404 }) });
   await assert.rejects(client.create("x"), { message: "workflows disabled", status: 404 });
