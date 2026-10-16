@@ -17,8 +17,10 @@ End-to-end worked example: a healthcare partner sends a clinical-note text to a 
 
 ## Run
 
+Needs `libraos-sdk` 2.0 or later: `end_user=` on `messages.create` is new in 2.0.
+
 ```bash
-pip install libraos-sdk
+pip install 'libraos-sdk>=2.0.0'
 export LIBRA_OS_URL=https://nova.your-company.example
 export LIBRA_OS_API_KEY=msk_live_...
 python clinical_note_triage.py

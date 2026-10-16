@@ -20,7 +20,7 @@ https://docs.meganova.ai → LibraOS → Use Cases → Customer Support Agent.
 
 Prerequisites::
 
-    pip install libraos-sdk
+    pip install 'libraos-sdk>=2.0.0'
     export LIBRA_OS_URL=https://nova.your-company.example
     export LIBRA_OS_API_KEY=msk_live_...
     export LIBRA_OS_CB_URL=https://partner.example/nova/cb   # where webhook_server.py is reachable
@@ -75,8 +75,9 @@ async def ask(c: Client, customer: str, question: str) -> None:
         agent_id="support-agent",
         messages=[{"role": "user", "content": question}],
         metadata={"agent_id": "support-agent"},
-        # Per-end-user memory needs the X-End-User header, which the SDK's
-        # messages.create does not send yet; memory here is per API key + agent.
+        # Sent as X-End-User: memory is kept per customer, so one customer's
+        # context never reaches another's session.
+        end_user=customer,
     )
     text = resp.text
     print(f"\n[{customer}] Q: {question}\nA: {text}")
