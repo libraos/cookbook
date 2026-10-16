@@ -8,7 +8,7 @@ const env = Object.fromEntries(
     .filter((l) => /^[A-Z_]+=/.test(l))
     .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
 );
-const URL_ = process.env.LIBRA_OS_URL ?? `http://localhost:${env.LIBRAOS_PORT ?? 8900}`;
+const URL_ = process.env.LIBRA_OS_URL ?? `http://localhost:${process.env.LIBRAOS_PORT ?? env.LIBRAOS_PORT ?? 8900}`;
 const secret = env.LIBRA_OS_SERVICE_CLIENTS.split("=").slice(1).join("=");
 
 async function call(path: string, body: unknown, token?: string) {
@@ -29,10 +29,12 @@ const tok = await call("/oauth/token", { grant_type: "client_credentials", clien
 if (tok.status !== 200) throw new Error(`token: ${tok.status} ${JSON.stringify(tok.body)}`);
 const token: string = tok.body.access_token;
 
-// 2. A persona agent. Re-running the script is safe.
+// 2. A persona agent. Re-running the script is safe. tool_scope "none": it
+//    only talks, so the kernel offers it no tools (and logs no warning).
 const agent = await call("/v1/agents", {
   name: "first-assistant",
   agent_type: "persona",
+  tool_scope: "none",
   system: "You are a friendly assistant. Answer in two sentences or fewer.",
 }, token);
 console.log(`create agent: HTTP ${agent.status}`);

@@ -5,6 +5,9 @@ type: persona
 # Retrieve from every collection the CALLER may read. For a normal user that
 # is only their own uploads (collection user_<id>); nobody else's documents.
 knowledge_bindings: ["*"]
+# This assistant only talks and searches documents; it calls no tools. Without
+# this the kernel offers it the whole tool catalog and logs an error at boot.
+tool_scope: none
 ---
 You are a personal assistant for the signed-in user.
 

@@ -33,12 +33,15 @@ normal user, not an admin.
 
 ## Quickstart
 
-1. Start the kernel (v0.1.21 or newer) from
+1. Start the kernel (v0.2.2) from
    [`get-started/`](../../get-started/README.md). Its
    `docker-compose.yml` already mounts `libraos-app/` into the kernel and
    switches on memory and document indexing. In `get-started/.env`, set
-   `PA_DEMO_PASSWORD` (12+ characters) and check that `LIBRA_OS_OIDC_CLIENTS`
-   includes `personal-assistant=http://localhost:5180/callback`.
+   `PA_DEMO_PASSWORD` (12+ characters), the embedding lines
+   (`LIBRA_OS_EMBEDDING_API_BASE`, without `/v1`, and
+   `LIBRA_OS_EMBEDDING_MODEL`: that's what makes uploads searchable), and
+   check that `LIBRA_OS_OIDC_CLIENTS` includes
+   `personal-assistant=http://localhost:5180/callback`.
 
    ```bash
    cd get-started && docker compose up -d
@@ -60,7 +63,11 @@ normal user, not an admin.
    npm run dev          # http://localhost:5180
    ```
 
-   Sign in as `demo@example.com` with your `PA_DEMO_PASSWORD`.
+   Sign in as `demo@example.com` with your `PA_DEMO_PASSWORD`. Port 5180
+   taken? `PORT=5188 npm run dev` and register
+   `personal-assistant=http://localhost:5188/callback` in `get-started/.env`
+   (restart the kernel after). The dev server also reads `LIBRA_OS_URL` and
+   `PORT` from `web/.env` (see `web/.env.example`).
 
 Try this: tell it something about yourself, then upload a file (`.txt`, `.md`,
 `.pdf` or `.docx`) and ask about it in a **New chat**. Start a third chat and
@@ -116,9 +123,10 @@ Things worth knowing:
 - **Replies stream.** With `"stream": true` the kernel answers with
   server-sent events, one JSON object per `data:` line, told apart by `type`:
   `text` frames carry the next piece of the reply, one `content` frame repeats
-  the whole reply at the end, and `done` carries `conversation_id` and
-  `cited_sources`. A failed turn sends `{"type":"error","error":"…"}` before
-  `done`. [`api.ts`](web/src/api.ts) reads them with `fetch` and a stream
+  the whole reply at the end, and `done` carries `conversation_id`,
+  `grounding`, `retrieved_chunks` (the documents the answer drew on) and
+  `cited_sources` (those the model named in its text, often none). A failed
+  turn sends `{"type":"error","error":"…"}` before `done`. [`api.ts`](web/src/api.ts) reads them with `fetch` and a stream
   reader (not `EventSource`, which can't `POST` or send a bearer token), and
   the chat pane renders the Markdown as it grows. Streamed turns are saved and
   remembered like any other.
@@ -138,14 +146,17 @@ Things worth knowing:
   `DELETE /api/documents/file/…`, which removes the file but leaves its indexed
   text searchable. Deleting a file doesn't touch memory, though. If you asked
   about it in a chat, the assistant may still recall that answer (see below).
-- **Document search is keyword (lexical) search** on this setup: the stock
-  compose has no vector database, so the kernel falls back to Postgres full-text
-  search. Answers report `"grounding": "degraded_retrieval"`. Ask with words that
-  appear in the document.
+- **Document search is semantic.** The kernel embeds each uploaded document
+  with `LIBRA_OS_EMBEDDING_MODEL` and keeps the vectors in Postgres (pgvector),
+  so you can ask in your own words. An answer that used a document reports
+  `"grounding": "grounded"` in its `done` frame and names the file in
+  `retrieved_chunks` (that's the app's **From:** line); a question nothing in
+  your documents matches reports `ungrounded_no_chunks`. Indexing takes a few
+  seconds after upload.
 
 ## Not yet
 
-Left out on purpose, because today's kernel (v0.1.21) can't do them, or can't
+Left out on purpose, because today's kernel (v0.2.2) can't do them, or can't
 do them for a normal user:
 
 - **Personal Gmail or calendar.** Connectors are organization-wide, set up by
@@ -163,6 +174,11 @@ do them for a normal user:
 
 ## Gotchas we hit
 
+- **Declare `tool_scope: none` on an agent that only talks.** Without it the
+  kernel offers the agent its whole tool catalog (file and shell tools
+  included) and logs `capability not active … tool_scope` at ERROR level on
+  every boot. [`assistant.md`](libraos-app/agents/assistant.md) sets it;
+  document search is not a tool, so retrieval still works.
 - **`agents: agents` in `nova-app.yaml` is required.** Leave it out and install
   still reports `"status":"active"`, but with `"agents_registered":0`, and chat
   returns `404 agent not found: assistant`. `setup.sh` prints the agent count so
@@ -195,9 +211,16 @@ do them for a normal user:
 - **Auto-indexing is off by default.** Without `LIBRA_OS_SUPERNOVA_ENABLED=true`
   uploads are stored but never searchable; the boot log says so at ERROR level
   (`capability not active … supernova_autoindex`).
+- **The embedding base URL must not end in `/v1`.** The kernel appends
+  `/v1/embeddings` itself. Left unset, it falls back to `OPENAI_API_BASE`,
+  which does end in `/v1`, and every upload fails to index with
+  `embedding API error 404` in the kernel log while the file still shows in
+  the list. `get-started/.env.example` sets `LIBRA_OS_EMBEDDING_API_BASE` to
+  the server root.
 - **The demo user is created by invitation.** `POST /api/admin/users/invite`
   (admin) returns an accept link, and `setup.sh` posts the password to it, as
   the invitee would, so the user's password is one they chose.
 - **Port 5180, not Vite's default.** The port is part of the registered
   `redirect_uri`, so the app pins it with `strictPort`. Vite's own defaults
-  (5173 and up) collide with other dev servers.
+  (5173 and up) collide with other dev servers. `PORT` moves it, together
+  with the registration.

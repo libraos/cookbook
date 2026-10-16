@@ -8,11 +8,14 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   const kernel = env.LIBRA_OS_URL || "http://localhost:8900";
+  // The port is part of the registered redirect_uri, so never drift from it.
+  // PORT=5188 npm run dev (or PORT in .env) moves it; then register
+  // personal-assistant=http://localhost:5188/callback in get-started/.env too.
+  const port = Number(env.PORT) || 5180;
   const proxy = { "/oauth": kernel, "/v1": kernel, "/api": kernel };
   return {
     plugins: [react()],
-    // The port is part of the registered redirect_uri, so never drift from it.
-    server: { port: 5180, strictPort: true, proxy },
-    preview: { port: 5180, strictPort: true, proxy },
+    server: { port, strictPort: true, proxy },
+    preview: { port, strictPort: true, proxy },
   };
 });
