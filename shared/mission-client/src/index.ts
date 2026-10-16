@@ -29,6 +29,12 @@ export type MissionClientOptions = {
   fetch?: Fetch;
   /** Prefix for kernel paths, e.g. `http://localhost:8900`. Empty means same origin. */
   baseURL?: string;
+  /**
+   * Reconnect when the stream is silent this long. The kernel sends a heartbeat
+   * every 10 seconds, so silence means a dead connection (for example a proxy
+   * that kept the browser side open after the kernel restarted). Default 30s.
+   */
+  idleTimeoutMs?: number;
 };
 
 const terminal = ["done", "failed", "cancelled"];
@@ -63,7 +69,7 @@ export function parseFrames(buffer: string): { frames: { id: number; data: strin
   return { frames, rest };
 }
 
-export function createMissionClient({ lead, fetch: send = fetch, baseURL = "" }: MissionClientOptions) {
+export function createMissionClient({ lead, fetch: send = fetch, baseURL = "", idleTimeoutMs = 30_000 }: MissionClientOptions) {
   const jobs = `${baseURL}/agents/v1/${encodeURIComponent(lead)}/jobs`;
   return {
     lead,
@@ -93,28 +99,65 @@ export function createMissionClient({ lead, fetch: send = fetch, baseURL = "" }:
 
     // fetch is used instead of EventSource because the stream needs a bearer
     // token. The server replays the stored log after Last-Event-ID, then
-    // follows live work, so a reconnect resumes without duplicating events.
+    // follows live work, and closes the stream once the job is terminal, so a
+    // reconnect resumes without duplicating events. A dropped connection is
+    // retried from the last event id; an aborted signal rejects.
     // Resolves once the job is done, failed or cancelled.
     async stream(jobID: string, onEvent: (event: MissionEvent, sequence: number) => void, signal?: AbortSignal): Promise<Job> {
       let after = 0;
+      let failures = 0;
       for (;;) {
-        const response = await send(`${jobs}/${jobID}/stream`, {
-          headers: after ? { "Last-Event-ID": String(after) } : undefined,
-          signal,
-        });
-        if (!response.ok || !response.body) await body(response);
-        const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
-        let buffer = "";
-        for (;;) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          const parsed = parseFrames(buffer + value);
-          buffer = parsed.rest;
-          for (const frame of parsed.frames) {
-            if (frame.id && frame.id <= after) continue;
-            after = Math.max(after, frame.id);
-            onEvent(JSON.parse(frame.data), frame.id);
+        // One controller per connection: the caller's signal or an idle
+        // watchdog ends it. Every chunk, heartbeats included, resets the watchdog.
+        const connection = new AbortController();
+        const stop = () => connection.abort();
+        signal?.addEventListener("abort", stop);
+        let idle = false;
+        let reader: ReadableStreamDefaultReader<string> | undefined;
+        let watchdog: ReturnType<typeof setTimeout> | undefined;
+        const arm = () => {
+          clearTimeout(watchdog);
+          watchdog = setTimeout(() => {
+            idle = true;
+            connection.abort();
+            reader?.cancel().catch(() => {}); // in case the fetch ignores its signal
+          }, idleTimeoutMs);
+        };
+        try {
+          if (signal?.aborted) throw signal.reason;
+          arm();
+          const response = await send(`${jobs}/${jobID}/stream`, {
+            headers: after ? { "Last-Event-ID": String(after) } : undefined,
+            signal: connection.signal,
+          });
+          if (!response.ok) await body(response);
+          if (!response.body) throw new MissionError("stream has no body", response.status);
+          reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+          let buffer = "";
+          for (;;) {
+            arm();
+            const { value, done } = await reader.read();
+            if (done) break;
+            const parsed = parseFrames(buffer + value);
+            buffer = parsed.rest;
+            for (const frame of parsed.frames) {
+              if (frame.id && frame.id <= after) continue;
+              after = Math.max(after, frame.id);
+              failures = 0;
+              onEvent(JSON.parse(frame.data), frame.id);
+            }
           }
+          if (idle) throw new TypeError("stream went silent");
+        } catch (cause) {
+          // Only a dropped connection (a TypeError from fetch or the reader) or
+          // a silent one is retried; kernel errors, sign-out and bad frames are final.
+          if (signal?.aborted) throw signal.reason ?? cause;
+          if (!(idle || cause instanceof TypeError) || ++failures > 5) throw cause;
+          await new Promise((resolve) => setTimeout(resolve, 1000 * failures));
+          continue;
+        } finally {
+          clearTimeout(watchdog);
+          signal?.removeEventListener("abort", stop);
         }
         const job = await this.get(jobID);
         if (terminal.includes(job.status)) return job;
@@ -189,9 +232,24 @@ export function reduceMission(state: MissionState, event: MissionEvent, sequence
       break;
     case "error":
     case "failed":
-      next.error = event.content ?? "Mission failed";
+    case "authz_failed":
+      next.error = event.content || "Mission failed";
       next.status = "failed";
       break;
+    // The worker's terminal receipt. Its status is the job's final status, so a
+    // job that ended without a report or an error event still leaves planning.
+    case "done":
+    case "cancelled": {
+      const status = metadata<string>(event, "status") ?? event.type;
+      if (status === "done" && !next.report && event.content) {
+        next.report = event.content;
+        next.status = "completed";
+      } else if (status !== "done" && next.status !== "completed" && !next.error) {
+        next.error = status === "cancelled" ? "Mission cancelled" : "Mission failed";
+        next.status = "failed";
+      }
+      break;
+    }
   }
   const taskID = metadata<string>(event, "task_id");
   const transition = taskTransitions[event.type];
