@@ -32,12 +32,14 @@ const job = await client.stream(jobID, (event, sequence) => {
 
 **Authentication:** pass a `fetch` that adds the bearer token. The stream needs it too, which is why the client uses `fetch` rather than `EventSource`.
 
-**Events:** the reducer reads `mission.created`, `mission.planned`, `task.*`, `approval.*`, `report.completed` and `response_complete`, and ignores others. Replayed sequences are ignored, so reconnecting never double-counts.
+**Events:** the reducer reads `mission.created`, `mission.planned`, `task.*`, `approval.*`, `report.completed` and `response_complete`, plus the worker's `error`, `failed`, `done` and `cancelled` receipts, and ignores others. Replayed sequences are ignored, so reconnecting never double-counts.
+
+**Stream lifetime:** the kernel sends `: nova-heartbeat` comments every 10 seconds (the parser skips comments), and closes the stream once the job is `done`, `failed` or `cancelled`. The client then reads the job and resolves with it. A connection that drops before that is reopened with `Last-Event-ID` after a short backoff; aborting the `signal` rejects the promise with `AbortError`.
 
 **Today the lead is the kernel's built-in `head-of-marketing`.** [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660) proposes mission templates in packs, so other teams' leads can run missions through the same routes.
 
 ## Test
 
 ```bash
-node --test src/*.test.ts   # Node 22.6+ (type stripping)
+npm test                    # node --test src/*.test.ts; Node 22.6+ (type stripping)
 ```
