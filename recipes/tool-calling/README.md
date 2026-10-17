@@ -33,6 +33,13 @@ host. `host.docker.internal:8080` is resolved by the kernel container, not by a
 remote hosted Runtime. For a remote deployment, change the agent callback URL to
 your reachable HTTPS service and configure its host policy and secret reference.
 
+Port 8080 taken? Set `COOKBOOK_WEBHOOK_PORT` for both the webhook and
+`docker compose` (the overlay reads it for the allowed host), and change
+`callback.url` in `libraos-app/agents/cookbook-order-lookup.md` to the same
+port. The webhook listens on every interface by default, because on Linux the
+kernel reaches it through the Docker bridge; set `COOKBOOK_WEBHOOK_HOST` to the
+bridge address (usually `172.17.0.1`) to narrow it.
+
 In a second terminal, obtain `LIBRA_OS_API_KEY` using shared setup, activate the
 same Python environment, then from the repository root install the mounted app:
 

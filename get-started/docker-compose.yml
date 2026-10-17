@@ -32,6 +32,11 @@ services:
     ulimits:
       memlock: { soft: -1, hard: -1 }
     environment:
+      # The port inside the container, which the ports: mapping above targets.
+      # The kernel also reads LIBRAOS_PORT as an alias, so a LIBRAOS_PORT line in
+      # .env would otherwise move its listen port and leave the mapping pointing
+      # at nothing. An explicit value here always wins over the alias.
+      LIBRA_OS_PORT: "8900"
       LIBRA_OS_DATABASE_URL: postgresql://libraos:libraos@postgres:5432/libraos?sslmode=disable
       # apps/personal-assistant: remember facts about each user, per agent.
       LIBRA_OS_OBSERVATIONAL_MEMORY: "1"

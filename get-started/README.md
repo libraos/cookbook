@@ -73,7 +73,7 @@ vector database is needed.
 Port 8900 taken? Pick another and keep the kernel's public URL in step:
 
 ```bash
-LIBRAOS_PORT=8901 docker compose up -d        # or put LIBRAOS_PORT in your shell profile
+LIBRAOS_PORT=8901 docker compose up -d        # or put LIBRAOS_PORT in your shell profile or .env
 ```
 
 and set `LIBRA_OS_PUBLIC_URL=http://localhost:8901` in `.env`. The example
