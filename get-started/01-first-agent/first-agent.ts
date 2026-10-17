@@ -1,15 +1,23 @@
 // Create an agent on your local LibraOS kernel and hold a short conversation.
 // Node 20+, no dependencies:  npx tsx first-agent.ts
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
-const env = Object.fromEntries(
-  readFileSync(new URL("../.env", import.meta.url), "utf8")
-    .split("\n")
-    .filter((l) => /^[A-Z_]+=/.test(l))
-    .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
-);
+// get-started/.env, when the kernel runs from get-started/ (optional if
+// LIBRA_OS_API_KEY is set).
+const envFile = new URL("../.env", import.meta.url);
+const env: Record<string, string> = existsSync(envFile)
+  ? Object.fromEntries(
+      readFileSync(envFile, "utf8")
+        .split("\n")
+        .filter((l) => /^[A-Z_]+=/.test(l))
+        .map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
+    )
+  : {};
 const URL_ = process.env.LIBRA_OS_URL ?? `http://localhost:${process.env.LIBRAOS_PORT ?? env.LIBRAOS_PORT ?? 8900}`;
-const secret = env.LIBRA_OS_SERVICE_CLIENTS.split("=").slice(1).join("=");
+const NO_CREDENTIALS =
+  "No LibraOS credentials. Either set LIBRA_OS_API_KEY to a token that can create agents " +
+  "(in VS Code: LibraOS > Copy Setup Token, or turn on Examples' Run and Debug), " +
+  "or create get-started/.env from .env.example and start the kernel there (see get-started/README.md).";
 
 async function call(path: string, body: unknown, token?: string) {
   const res = await fetch(URL_ + path, {
@@ -24,10 +32,21 @@ async function call(path: string, body: unknown, token?: string) {
   return { status: res.status, body: await res.json().catch(() => ({})) };
 }
 
-// 1. A bearer token for the laptop-only quickstart client.
-const tok = await call("/oauth/token", { grant_type: "client_credentials", client_id: "quickstart", client_secret: secret });
-if (tok.status !== 200) throw new Error(`token: ${tok.status} ${JSON.stringify(tok.body)}`);
-const token: string = tok.body.access_token;
+// 1. A bearer token: LIBRA_OS_API_KEY if set, otherwise one for the
+//    laptop-only quickstart client in get-started/.env.
+let token: string;
+if (process.env.LIBRA_OS_API_KEY) {
+  token = process.env.LIBRA_OS_API_KEY;
+} else {
+  if (!env.LIBRA_OS_SERVICE_CLIENTS) {
+    console.error(NO_CREDENTIALS);
+    process.exit(1);
+  }
+  const secret = env.LIBRA_OS_SERVICE_CLIENTS.split("=").slice(1).join("=");
+  const tok = await call("/oauth/token", { grant_type: "client_credentials", client_id: "quickstart", client_secret: secret });
+  if (tok.status !== 200) throw new Error(`token: ${tok.status} ${JSON.stringify(tok.body)}`);
+  token = tok.body.access_token;
+}
 
 // 2. A persona agent. Re-running the script is safe. tool_scope "none": it
 //    only talks, so the kernel offers it no tools (and logs no warning).

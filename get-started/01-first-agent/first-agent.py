@@ -28,6 +28,14 @@ async def run(c: Client) -> list[str]:
     return replies
 
 
+NO_CREDENTIALS = (
+    "No LibraOS credentials. Either set LIBRA_OS_API_KEY to a token that can create "
+    "agents (in VS Code: LibraOS > Copy Setup Token, or turn on Examples' Run and Debug), "
+    "or create get-started/.env from .env.example and start the kernel there "
+    "(see get-started/README.md)."
+)
+
+
 async def main() -> None:
     # Read configuration only when executing, never merely importing the example.
     env_path = Path(__file__).parent / "../.env"
@@ -42,6 +50,8 @@ async def main() -> None:
     #    token; this one call fetches it from the kernel.
     token = os.environ.get("LIBRA_OS_API_KEY")
     if not token:
+        if "LIBRA_OS_SERVICE_CLIENTS" not in env:
+            raise SystemExit(NO_CREDENTIALS)
         secret = env["LIBRA_OS_SERVICE_CLIENTS"].split("=", 1)[1]
         async with httpx.AsyncClient() as http:
             res = await http.post(f"{url}/oauth/token", json={
