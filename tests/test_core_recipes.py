@@ -75,7 +75,14 @@ async def test_document_qa_binds_ingested_docs_and_exercises_a_miss(monkeypatch)
             return httpx.Response(200, json={"content": [{"type": "text", "text": "fixture answer"}]})
         return httpx.Response(200, json={})
     monkeypatch.setattr(qa, "Client", lambda **kw: Client(**kw, transport=httpx.MockTransport(server)))
+    http_client = httpx.AsyncClient
+    monkeypatch.setattr(qa.httpx, "AsyncClient", lambda **kw: http_client(**{**kw, "transport": httpx.MockTransport(server)}))
     await qa.main()
+    # The collection is created (registered) before ingest, so the binding holds.
+    order = [(r.method, r.url.path) for r in requests]
+    create = order.index(("POST", "/api/knowledge/collections"))
+    assert order.index(("DELETE", f"/api/knowledge/collections/{qa.COLLECTION}")) < create < order.index(("POST", "/v1/managed/knowledge/ingest"))
+    assert not any(r.method == "DELETE" and r.url.path == "/v1/agents/handbook-copilot" for r in requests[create:])
     agent = next(json.loads(r.content) for r in requests if r.method == "POST" and r.url.path == "/v1/agents")
     assert agent["knowledge_bindings"] == [qa.COLLECTION]
     assert "never guess" in agent["system"]
