@@ -37,7 +37,12 @@ def create_app(secret: str, receipts: Path | None = None) -> FastAPI:
 if __name__ == "__main__":
     import uvicorn
 
+    # The kernel container reaches this host as host.docker.internal. On Linux
+    # that is the Docker bridge address, so the default listens on every
+    # interface; set COOKBOOK_WEBHOOK_HOST=172.17.0.1 (your bridge) to narrow
+    # it. A different port must match compose.yaml and the agent's callback.url.
     uvicorn.run(
         create_app(os.environ["LIBRA_OS_CALLBACK_SECRET_COOKBOOK"], Path("receipts.jsonl")),
-        host="0.0.0.0", port=8080,
+        host=os.environ.get("COOKBOOK_WEBHOOK_HOST", "0.0.0.0"),
+        port=int(os.environ.get("COOKBOOK_WEBHOOK_PORT", "8080")),
     )

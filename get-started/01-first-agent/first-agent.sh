@@ -5,15 +5,26 @@
 #   ./first-agent.sh 'Say "hi" in French'  # or your own
 set -euo pipefail
 cd "$(dirname "$0")"
-set -a; . ../.env; set +a
+# get-started/.env, when the kernel runs from get-started/ (optional if
+# LIBRA_OS_API_KEY is set).
+if [ -f ../.env ]; then set -a; . ../.env; set +a; fi
 URL="${LIBRA_OS_URL:-http://localhost:${LIBRAOS_PORT:-8900}}"
-SECRET="${LIBRA_OS_SERVICE_CLIENTS#*=}"   # quickstart:admin=<secret>
 
-# 1. Exchange the quickstart client's secret for a bearer token.
-TOKEN=$(curl -sS -X POST "$URL/oauth/token" \
-  -H 'content-type: application/json' \
-  -d "{\"grant_type\":\"client_credentials\",\"client_id\":\"quickstart\",\"client_secret\":\"$SECRET\"}" \
-  | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["access_token"]) if "access_token" in d else sys.exit("token failed: %s" % d)')
+# 1. A bearer token: LIBRA_OS_API_KEY if set, otherwise exchange the
+#    quickstart client's secret from get-started/.env.
+if [ -n "${LIBRA_OS_API_KEY:-}" ]; then
+  TOKEN="$LIBRA_OS_API_KEY"
+else
+  if [ -z "${LIBRA_OS_SERVICE_CLIENTS:-}" ]; then
+    echo "No LibraOS credentials. Either set LIBRA_OS_API_KEY to a token that can create agents (in VS Code: LibraOS > Copy Setup Token, or turn on Examples' Run and Debug), or create get-started/.env from .env.example and start the kernel there (see get-started/README.md)." >&2
+    exit 1
+  fi
+  SECRET="${LIBRA_OS_SERVICE_CLIENTS#*=}"   # quickstart:admin=<secret>
+  TOKEN=$(curl -sS -X POST "$URL/oauth/token" \
+    -H 'content-type: application/json' \
+    -d "{\"grant_type\":\"client_credentials\",\"client_id\":\"quickstart\",\"client_secret\":\"$SECRET\"}" \
+    | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d["access_token"]) if "access_token" in d else sys.exit("token failed: %s" % d)')
+fi
 
 # 2. Create a persona agent. Re-running the script is safe. tool_scope "none":
 #    it only talks, so the kernel offers it no tools (and logs no warning).
