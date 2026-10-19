@@ -28,6 +28,7 @@ import asyncio
 import contextlib
 import os
 
+import httpx
 from libraos import Client
 from libraos.errors import NotFoundError
 
@@ -75,6 +76,23 @@ async def ask(c: Client, question: str) -> None:
     print(f"\nQ: {question}\nA: {text}")
 
 
+async def recreate_collection(base_url: str, api_key: str) -> None:
+    """Start the collection over, registered so an agent can be bound to it.
+
+    Ingest creates a collection that search can use, but on runtime v0.2.2 not
+    one an agent can be bound to: the binding is dropped with only a log line
+    (libraos/libraos#615). Creating it first registers it. The SDK has no call
+    for this yet, so it is one admin HTTP request.
+    """
+    headers = {"authorization": f"Bearer {api_key}"}
+    async with httpx.AsyncClient(base_url=base_url, headers=headers, timeout=60) as h:
+        r = await h.delete(f"/api/knowledge/collections/{COLLECTION}")
+        if r.status_code not in (200, 204, 404):
+            r.raise_for_status()
+        r = await h.post("/api/knowledge/collections", json={"name": COLLECTION, "access_level": "corporate"})
+        r.raise_for_status()
+
+
 async def main() -> None:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
@@ -85,7 +103,9 @@ async def main() -> None:
         with contextlib.suppress(NotFoundError):
             await c.agents.delete("handbook-copilot")
 
-        # 1. Ingest the documents. The collection is created on first ingest.
+        # 1. Ingest the documents into a freshly created collection, so a
+        #    second run does not index them twice.
+        await recreate_collection(base_url, api_key)
         for doc in DOCS:
             await c.knowledge.ingest(
                 content=doc["content"], title=doc["title"], collection=COLLECTION
@@ -118,8 +138,9 @@ async def main() -> None:
         #     declines instead of fabricating a plausible-sounding policy.
         await ask(c, "What is the company's parental leave policy?")
 
-        # 4. Cleanup for dev loops.
-        await c.agents.delete("handbook-copilot")
+        # The agent stays, so you can inspect it and its binding; the next run
+        # starts clean.
+        print(f"\nAgent 'handbook-copilot' is bound to {COLLECTION!r}.")
 
 
 if __name__ == "__main__":

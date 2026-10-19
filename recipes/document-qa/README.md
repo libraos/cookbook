@@ -4,7 +4,7 @@ End-to-end worked example: a partner ingests policy documents into a knowledge c
 
 ## What this demonstrates
 
-- **Knowledge ingest + binding** — `c.knowledge.ingest(...)` indexes each document into a collection (created on first ingest); `knowledge_bindings=[...]` on the agent scopes retrieval to it. The persona only ever retrieves from what you bound it to, and the retrieved passages are injected into every turn.
+- **Knowledge ingest + binding** — the recipe creates the collection, `c.knowledge.ingest(...)` indexes each document into it, and `knowledge_bindings=[...]` on the agent scopes retrieval to it. Create the collection first: on kernel v0.2.2 a collection that only ingest created cannot be bound, and the binding is dropped with just a log line ([libraos/libraos#615](https://github.com/libraos/libraos/issues/615)). Creating it is an admin call (`POST /api/knowledge/collections`) the SDK does not wrap yet. The persona only ever retrieves from what you bound it to, and the retrieved passages are injected into every turn.
 - **`tool_scope="none"`** — the copilot answers from the injected passages and needs no catalog tools; a persona that declares no scope is offered the whole catalog, which only slows the answer down.
 - **`knowledge_gate`** — for a knowledge-bound persona, a *confident* retrieval hit is answered directly on the cheap tier without waking the planner; a low-confidence miss **fails open** to the full pipeline. It is switched on per agent in the agent definition (`knowledge_gate: true` in an agent file or employee bundle, see the [`customer-support`](../customer-support/) recipe for the bundle pattern); kernel v0.2.2 does not take it on `c.agents.create(...)`, so this recipe runs on the standard persona path. The deployment-wide switch is `LIBRA_OS_KNOWLEDGE_GATE_ENABLED`.
 - **Grounded refusal** — the last question ("parental leave") isn't in the handbook. A correct answer declines rather than inventing a plausible policy. That behaviour is the whole point of grounding: "here's the source" beats "sounds right".
@@ -38,6 +38,8 @@ Source: doc-99ff150d7fa16222
 Q: What is the company's parental leave policy?
 A: I don't have the company's parental leave policy in the provided knowledge base. The available excerpts cover PTO, remote work, and business expenses only.
 ```
+
+The agent `handbook-copilot` stays after the run, bound to `employee-handbook`, so you can inspect it (in VS Code, the LibraOS Runtime Explorer shows the binding). Each run starts the collection and the agent over.
 
 Citations are the ingested document ids. A smoke check: the first two answers carry a `Source:` line, and the third declines instead of stating a number of weeks.
 
