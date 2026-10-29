@@ -31,7 +31,7 @@ memory is an optional extension. Async Jobs is another independent L3 branch.
 | L1 [First Agent](../get-started/01-first-agent/) | Working Runtime and token | Create an agent; receive replies with retained conversation context | Invalid credentials; model/service unavailable |
 | L1 [Ticket Routing](../recipes/ticket-routing/) | First Agent; Python | Schema-valid intent and measured classification accuracy | Invalid schema is an error; a valid but wrong label is an evaluation miss |
 | L2 [Document Q&A](../recipes/document-qa/) | First Agent; knowledge ingestion | Answer backed by the supplied handbook | Missing policy must not be invented |
-| L2 [Tools](../recipes/tool-calling/) | First Agent; callback service and agent manifest | Order status plus a signed callback receipt | Unknown order, invalid signature, unavailable webhook |
+| L2 [Tools](../recipes/tool-calling/) | First Agent; kernel v0.3.0+; signed callback service | Order status plus a signed callback receipt | Unknown order, invalid signature, unavailable webhook |
 | L2 [Memory](../recipes/memory-isolation/) | First Agent; memory enabled; two normal users | A's unique preference is recalled in a new conversation | B cannot recall it, even when requesting A's end-user identity |
 | L3 [Customer Support](../recipes/customer-support/) | Knowledge + Tools + trusted identity mapping | KB answer and live order lookup | Tool failure must not become a fabricated order; the bundle registration path needs its documented reload |
 | L3 [Async Jobs](../recipes/async-jobs/) | First Agent; PostgreSQL-backed jobs | Job ID survives a client restart; resume reads the same job | Lost response, timeout, failed/cancelled job, authorization error |

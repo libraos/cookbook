@@ -28,6 +28,7 @@ async def test_live_tool_lookup_requires_callback_evidence():
         base_url=os.environ["LIBRA_OS_URL"], timeout=120,
         headers={"Authorization": f"Bearer {os.environ['LIBRA_OS_API_KEY']}"},
     ) as http:
+        await example.register(http)
         known = await example.ask(http, "ORD-5591")
         missing = await example.ask(http, "ORD-NOT-FOUND")
     assert known["structured"]["status"] == "in_transit"
@@ -42,6 +43,7 @@ async def test_live_webhook_unavailable():
         pytest.skip("Stop the demo webhook, then explicitly set COOKBOOK_WEBHOOK_UNAVAILABLE=1")
     example = load_example("recipes/tool-calling/tool_calling.py")
     async with httpx.AsyncClient(base_url=os.environ["LIBRA_OS_URL"], timeout=120, headers={"Authorization": f"Bearer {os.environ['LIBRA_OS_API_KEY']}"}) as http:
+        await example.register(http)
         try:
             result = await example.ask(http, "ORD-5591")
         except httpx.HTTPStatusError as exc:
