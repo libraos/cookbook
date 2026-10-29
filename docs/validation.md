@@ -24,7 +24,7 @@ It uploads JUnit results. This suite is deterministic and suitable for PR gating
 | First Agent | Python path creates/chats, preserves history; 401/403 and model-service 503 propagate | Does not certify Bash/TypeScript parity or a provider's availability |
 | Ticket Routing | Malformed JSON/schema rejected; a schema-valid wrong class is counted as a miss | Label accuracy is a model evaluation, separate from schema validity |
 | Document Q&A | Bound collection and grounding system prompt sent; in-scope and miss inputs exercised; auth failure propagates | Correct source attribution and non-fabrication still need live evidence; fixtures are not retrieval tests |
-| Tool Calling | Signed callback, known/missing order, rejected signature, duplicate callback, HTTP/transport errors; registration forces the lookup and carries no secret; answers outside the contract raise | Opt-in known/missing tool calls require actual receipt evidence; separate stopped-webhook evaluation. Kernel v0.3.0 or later |
+| Tool Calling | Signed callback, known/missing order, rejected signature, duplicate callback, HTTP/transport errors; registration forces the lookup, carries no secret and refuses a Runtime that drops the tool; answers outside the contract or without a matching recorded lookup raise | Opt-in known/missing tool calls require actual receipt evidence; separate stopped-webhook evaluation. Kernel v0.3.0 or later |
 | Memory | Separate tokens, fresh conversation IDs, no forwarded history, identity preflight, conversation-access responses | Opt-in A conversation read/B denial, plus positive recall and cross-user/override isolation; probabilistic recall is not a complete authorization audit |
 | Async Job | Persisted idempotency/ID, uncertain submit, resume, timeout, cancellation race, terminal states and read failures | Opt-in submit/resume/completion; actual kernel restart durability is outside this client's proof |
 | Mission Decision | Pending gate, reducer failure, replay, 403 from decision endpoint | Server-side ownership/role matrix still requires a named Runtime integration test |
@@ -71,13 +71,16 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
   passes; **20/20** lookups (10 per order) returned the typed status with
   exactly one matching callback receipt; `webhook_unavailable` passed 3/3,
   answering `unavailable`.
-- `mistralai/Mistral-Small-3.2-24B-Instruct-2506`: **8/20**. Failures are
-  malformed tool arguments (`ORD-5591,`, long random suffixes) and upstream
-  calls that run to the client timeout. The same request sent straight to the
-  gateway reproduces them (13/16 clean), while Gemini 2.5 Flash, Qwen3-235B and
-  Mistral-Small-4 return 16/16 clean arguments. The recipe reports these runs
-  as failures; none produced an invented status.
-- Offline: 44 Python tests passed, 9 mission client tests passed.
+- `mistralai/Mistral-Small-3.2-24B-Instruct-2506`: **9/20**. Of the 11
+  failures, 10 were malformed tool arguments (`ORD-5591,`, `ORD-NOTFOUND`, long
+  random suffixes), each rejected by the client's check against the recorded
+  lookup, and 1 ran to the client timeout. No run printed a status the tool did
+  not return. The same request sent straight to the gateway reproduces the
+  malformed arguments (13/16 clean), while Gemini 2.5 Flash, Qwen3-235B and
+  Mistral-Small-4 return 16/16 clean arguments.
+- Kernel **v0.2.2**: `tool_calling.py` stops at registration with "requires
+  kernel v0.3.0 or later" (`POST /v1/agents` answers 426).
+- Offline: 55 Python tests passed, 9 mission client tests passed.
 
 ## Verification record — 2026-10-16
 

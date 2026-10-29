@@ -4,12 +4,14 @@
 Q&A, memory, browser sign-in or a mission. This adds one read-only tool over two
 synthetic outcomes: a known order and a missing order.
 
-**Requires kernel v0.3.0 or later.** Earlier kernels drop `custom_tools` on
-`POST /v1/agents`, and the app-manifest route this recipe used before never
-offered custom tools to a persona, so the model received no tools at all.
+**Requires kernel v0.3.0 or later.** Earlier kernels answer 200 on
+`POST /v1/agents` while dropping `custom_tools`, and on v0.2.x the
+app-manifest route this recipe used before never offered custom tools to a
+persona, so the model received no tools at all. `tool_calling.py` stops with an
+error when the Runtime does not keep the tool.
 
 **Validation status:** offline callback/client protocol tests pass. Live on
-v0.3.0 through the MegaNova gateway: 20/20 with `gemini/gemini-2.5-flash`, 8/20
+v0.3.0 through the MegaNova gateway: 20/20 with `gemini/gemini-2.5-flash`, 9/20
 with `mistralai/Mistral-Small-3.2-24B-Instruct-2506`, whose tool arguments are
 often malformed even when called directly. See
 [the verification record](../../docs/validation.md). Run it on your selected
@@ -55,11 +57,13 @@ python recipes/tool-calling/tool_calling.py ORD-5591
 python recipes/tool-calling/tool_calling.py ORD-NOT-FOUND
 ```
 
-Each run registers `cookbook-order-lookup` through `POST /v1/agents` (replacing
-an earlier definition) and prints typed `order_id` and `status`. The webhook
-writes `receipts.jsonl` in its working directory: a signed callback must appear
-there for each lookup. An answer that happens to mention UPS is not proof of a
-tool call.
+Each run registers `cookbook-order-lookup` through `POST /v1/agents` (a repeat
+POST replaces the definition) and prints typed `order_id` and `status`. The
+client accepts that status only when the turn's `tool_transcript` shows an
+`order_lookup` call for exactly that `order_id` whose recorded result supports
+it. The webhook writes `receipts.jsonl` in its working directory: a signed
+callback must appear there for each lookup. An answer that happens to mention
+UPS is not proof of a tool call.
 
 Keep the callback nested as `callback.url` and `callback.auth`; do not replace
 it with an assumed `callback_url` field. `POST /v1/agents` refuses unknown
@@ -85,6 +89,11 @@ Each setting below fixes a failure observed in a live run on v0.3.0:
   run, and `tool_calling.py` checks that contract itself.
 - **`brain: false`, `tool_scope: "none"`.** The agent can call `order_lookup`
   and nothing else from the tool catalog.
+- **The answer must match the recorded lookup.** Each chat asks for
+  `include_metadata`, and the client compares the status with the
+  `order_lookup` result in `tool_transcript`. A malformed argument such as
+  `ORD-5591,` reaches the webhook as an unknown order; relaying that
+  `not_found` for `ORD-5591` is rejected rather than printed.
 
 ## Observable checks
 
@@ -94,7 +103,7 @@ Each setting below fixes a failure observed in a live run on v0.3.0:
 | Missing order | Signed POST returns `found: false` | Typed `not_found` answer and receipt |
 | Invalid signature | HTTP 401; handler creates no receipt | No model required |
 | Duplicate delivery | Same result; one receipt | In-memory dedup only, not a durable production guarantee |
-| Malformed answer | Prose, extra fields, a different `order_id` or an unknown status raise | A failed run is reported, never turned into a status |
+| Malformed or unsupported answer | Prose, extra fields, a different `order_id`, an unknown status, no recorded lookup, or a status the recorded result does not support raise | A failed run is reported, never turned into a status |
 | Webhook unavailable | Client propagates upstream/transport failure | Stop webhook; Runtime returns a tool/upstream failure or typed `unavailable`, never an invented status |
 
 ```bash
