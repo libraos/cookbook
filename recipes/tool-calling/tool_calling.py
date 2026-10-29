@@ -104,7 +104,7 @@ def looked_up(call: dict) -> str | None:
 
 
 def recorded_status(transcript: list, order_id: str) -> str:
-    """The outcome of the last order_lookup the Runtime ran for exactly this order_id."""
+    """The outcome the Runtime recorded for order_lookup calls with exactly this order_id."""
     calls = {call.get("id") for message in transcript if message.get("role") == "assistant"
              for call in message.get("tool_calls") or [] if looked_up(call) == order_id}
     results = [m.get("content") or "" for m in transcript
@@ -112,9 +112,15 @@ def recorded_status(transcript: list, order_id: str) -> str:
     if not results:
         raise ValueError(f"No order_lookup ran for {order_id}; the answer is not evidence")
     try:
-        return tool_outcome(results[-1])
+        outcomes = {tool_outcome(content) for content in results}
     except (ValueError, KeyError, TypeError) as exc:
         raise ValueError("Unreadable order_lookup result") from exc
+    # A delivered result outranks a failed delivery (a retry that errored after
+    # a success); two delivered results that disagree are not evidence of either.
+    delivered = outcomes - {"unavailable"}
+    if len(delivered) > 1:
+        raise ValueError(f"Conflicting order_lookup results for {order_id}")
+    return delivered.pop() if delivered else "unavailable"
 
 
 async def ask(http: httpx.AsyncClient, order_id: str) -> dict:

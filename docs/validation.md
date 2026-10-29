@@ -80,7 +80,7 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
   Mistral-Small-4 return 16/16 clean arguments.
 - Kernel **v0.2.2**: `tool_calling.py` stops at registration with "requires
   kernel v0.3.0 or later" (`POST /v1/agents` answers 426).
-- Offline: 55 Python tests passed, 9 mission client tests passed.
+- Offline: 58 Python tests passed, 9 mission client tests passed.
 
 ## Verification record — 2026-10-16
 

@@ -4,11 +4,12 @@
 Q&A, memory, browser sign-in or a mission. This adds one read-only tool over two
 synthetic outcomes: a known order and a missing order.
 
-**Requires kernel v0.3.0 or later.** Earlier kernels answer 200 on
-`POST /v1/agents` while dropping `custom_tools`, and on v0.2.x the
-app-manifest route this recipe used before never offered custom tools to a
-persona, so the model received no tools at all. `tool_calling.py` stops with an
-error when the Runtime does not keep the tool.
+**Requires kernel v0.3.0 or later.** Earlier kernels refuse this recipe's
+`POST /v1/agents` (426, a beta-header gate) or, with the beta header, accept it
+while dropping `custom_tools`. On v0.2.x the app-manifest route this recipe used
+before never offered custom tools to a persona either, so the model received no
+tools at all. `tool_calling.py` stops with "requires kernel v0.3.0 or later" in
+both cases.
 
 **Validation status:** offline callback/client protocol tests pass. Live on
 v0.3.0 through the MegaNova gateway: 20/20 with `gemini/gemini-2.5-flash`, 9/20
@@ -93,7 +94,10 @@ Each setting below fixes a failure observed in a live run on v0.3.0:
   `include_metadata`, and the client compares the status with the
   `order_lookup` result in `tool_transcript`. A malformed argument such as
   `ORD-5591,` reaches the webhook as an unknown order; relaying that
-  `not_found` for `ORD-5591` is rejected rather than printed.
+  `not_found` for `ORD-5591` is rejected rather than printed. A delivered
+  result outranks a failed retry; delivered results that disagree are rejected.
+  Calls are matched to results by tool-call id, so a gateway that returns tool
+  calls without ids fails this check even when the lookup ran.
 
 ## Observable checks
 

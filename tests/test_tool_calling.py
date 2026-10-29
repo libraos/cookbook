@@ -102,6 +102,8 @@ UNREACHABLE = lookup("c1", '{"order_id": "ORD-5591"}',
                      'error: custom tool "order_lookup" webhook: dispatch: exhausted 1 attempts')
 MANGLED_ARGUMENT = lookup("c1", '{"order_id": "ORD-5591,"}', delivered({"order_id": "ORD-5591,", "found": False}))
 RETRIED = lookup("c0", '{"order_id": "ORD-5591\u201c', "error: invalid arguments") + IN_TRANSIT
+FAILED_RETRY = IN_TRANSIT + lookup("c2", '{"order_id": "ORD-5591"}', "error: dispatch: exhausted 1 attempts")
+CONFLICTING = IN_TRANSIT + lookup("c2", '{"order_id": "ORD-5591"}', delivered({"order_id": "ORD-5591", "found": False}))
 
 
 def answering(text, transcript, seen=None):
@@ -118,6 +120,7 @@ def answering(text, transcript, seen=None):
     ('{"order_id": "ORD-5591", "status": "not_found"}', NOT_FOUND, "not_found"),
     ('{"order_id": "ORD-5591", "status": "unavailable"}', UNREACHABLE, "unavailable"),
     ('{"order_id": "ORD-5591", "status": "in_transit"}', RETRIED, "in_transit"),
+    ('{"order_id": "ORD-5591", "status": "in_transit"}', FAILED_RETRY, "in_transit"),
 ])
 async def test_answer_backed_by_the_recorded_lookup(text, transcript, status):
     seen = []
@@ -135,6 +138,10 @@ async def test_answer_backed_by_the_recorded_lookup(text, transcript, status):
     # The answer contradicts what the tool returned.
     ('{"order_id": "ORD-5591", "status": "not_found"}', IN_TRANSIT),
     ('{"order_id": "ORD-5591", "status": "in_transit"}', UNREACHABLE),
+    # Two delivered results disagree: neither supports the answer.
+    ('{"order_id": "ORD-5591", "status": "in_transit"}', CONFLICTING),
+    # A delivered result outranks a later failed retry.
+    ('{"order_id": "ORD-5591", "status": "unavailable"}', FAILED_RETRY),
 ])
 async def test_answer_without_matching_evidence_is_an_error(text, transcript):
     async with httpx.AsyncClient(transport=answering(text, transcript), base_url="http://kernel") as http:
