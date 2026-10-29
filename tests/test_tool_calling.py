@@ -43,6 +43,57 @@ async def test_invalid_signature_never_executes_handler(tmp_path):
     assert not receipts.exists()
 
 
+async def test_registration_forces_the_lookup_and_keeps_the_secret_out():
+    sent = []
+
+    def kernel(request):
+        sent.append(request)
+        return httpx.Response(404 if request.method == "DELETE" else 200, json={})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(kernel), base_url="http://kernel") as http:
+        await example.register(http)
+    assert [(r.method, r.url.path) for r in sent] == [
+        ("DELETE", "/v1/agents/cookbook-order-lookup"), ("POST", "/v1/agents")]
+    agent = json.loads(sent[1].content)
+    assert agent["tool_choice"] == "order_lookup" and agent["tool_scope"] == "none"
+    assert "output_type" not in agent
+    callback = agent["custom_tools"][0]["callback"]
+    assert callback["auth"] == {"type": "hmac_sha256", "secret_ref": "LIBRA_OS_CALLBACK_SECRET_COOKBOOK"}
+    assert callback["url"].endswith("/callback/")
+
+
+def answering(text, seen=None):
+    def kernel(request):
+        if seen is not None:
+            seen.append(json.loads(request.content))
+        return httpx.Response(200, json={"response": text})
+    return httpx.MockTransport(kernel)
+
+
+@pytest.mark.parametrize("text", [
+    '{"order_id": "ORD-5591", "status": "in_transit"}',
+    '```json\n{"order_id": "ORD-5591", "status": "in_transit"}\n```',
+])
+async def test_typed_answer_without_memory(text):
+    seen = []
+    async with httpx.AsyncClient(transport=answering(text, seen), base_url="http://kernel") as http:
+        result = await example.ask(http, "ORD-5591")
+    assert result["structured"] == {"order_id": "ORD-5591", "status": "in_transit"}
+    assert seen[0]["no_memory"] is True
+
+
+@pytest.mark.parametrize("text", [
+    "Order ORD-5591 is in transit with UPS.",
+    '{"order_id": "ORD-5591\\u201c", "status": "in_transit"}',
+    '{"order_id": "ORD-5591", "status": "delivered"}',
+    '{"order_id": "ORD-5591", "found": false}',
+    '{"order_id": "ORD-5591", "status": "in_transit", "carrier": "UPS"}',
+])
+async def test_answer_outside_the_contract_is_an_error(text):
+    async with httpx.AsyncClient(transport=answering(text), base_url="http://kernel") as http:
+        with pytest.raises(ValueError):
+            await example.ask(http, "ORD-5591")
+
+
 @pytest.mark.parametrize("status", [401, 403, 502, 503])
 async def test_runtime_errors_do_not_become_successful_orders(status):
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(status, json={"error": "unavailable"})), base_url="http://kernel") as http:

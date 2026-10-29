@@ -24,7 +24,7 @@ It uploads JUnit results. This suite is deterministic and suitable for PR gating
 | First Agent | Python path creates/chats, preserves history; 401/403 and model-service 503 propagate | Does not certify Bash/TypeScript parity or a provider's availability |
 | Ticket Routing | Malformed JSON/schema rejected; a schema-valid wrong class is counted as a miss | Label accuracy is a model evaluation, separate from schema validity |
 | Document Q&A | Bound collection and grounding system prompt sent; in-scope and miss inputs exercised; auth failure propagates | Correct source attribution and non-fabrication still need live evidence; fixtures are not retrieval tests |
-| Tool Calling | Signed callback, known/missing order, rejected signature, duplicate callback, HTTP/transport errors | Opt-in known/missing tool calls require actual receipt evidence; separate stopped-webhook evaluation |
+| Tool Calling | Signed callback, known/missing order, rejected signature, duplicate callback, HTTP/transport errors; registration forces the lookup and carries no secret; answers outside the contract raise | Opt-in known/missing tool calls require actual receipt evidence; separate stopped-webhook evaluation. Kernel v0.3.0 or later |
 | Memory | Separate tokens, fresh conversation IDs, no forwarded history, identity preflight, conversation-access responses | Opt-in A conversation read/B denial, plus positive recall and cross-user/override isolation; probabilistic recall is not a complete authorization audit |
 | Async Job | Persisted idempotency/ID, uncertain submit, resume, timeout, cancellation race, terminal states and read failures | Opt-in submit/resume/completion; actual kernel restart durability is outside this client's proof |
 | Mission Decision | Pending gate, reducer failure, replay, 403 from decision endpoint | Server-side ownership/role matrix still requires a named Runtime integration test |
@@ -61,6 +61,23 @@ For Q&A evaluation, separately label whether the question is answerable, the
 acceptable supporting documents, required facts and prohibited invented facts.
 An evaluator should assess source support and refusal semantics, not insist on
 one refusal phrase. This model-quality evaluation is not yet automated here.
+
+## Verification record — 2026-10-29 (Tool Calling)
+
+- Kernel **v0.3.0** (`52cb8d7b`), fresh Compose volumes, MegaNova gateway, SDK 2.0.0.
+  The recipe now registers its agent through `POST /v1/agents` instead of an
+  app manifest; v0.2.2–v0.2.4 never offered `custom_tools` to the model.
+- `gemini/gemini-2.5-flash`: documented runs pass; `tool_lookup` live test
+  passes; **20/20** lookups (10 per order) returned the typed status with
+  exactly one matching callback receipt; `webhook_unavailable` passed 3/3,
+  answering `unavailable`.
+- `mistralai/Mistral-Small-3.2-24B-Instruct-2506`: **8/20**. Failures are
+  malformed tool arguments (`ORD-5591,`, long random suffixes) and upstream
+  calls that run to the client timeout. The same request sent straight to the
+  gateway reproduces them (13/16 clean), while Gemini 2.5 Flash, Qwen3-235B and
+  Mistral-Small-4 return 16/16 clean arguments. The recipe reports these runs
+  as failures; none produced an invented status.
+- Offline: 44 Python tests passed, 9 mission client tests passed.
 
 ## Verification record — 2026-10-16
 
