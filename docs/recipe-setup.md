@@ -85,8 +85,8 @@ Before relying on `X-Canonical-User`:
   admin-owned credential has it; an API key minted on kernel v0.3.0 also needs
   `"allow_impersonation": true` (keys from earlier releases kept it). Without
   the capability the header is ignored, with no error, and every end user
-  shares the credential's own log. Check once: two ids, one marker, as in the
-  Memory recipe.
+  shares the credential's own log. Check once: state a marker under one id,
+  then confirm a second id cannot recall it.
 - **Every use is audited as impersonation.** The kernel logs
   `identity override: caller acted as another subject` with the id at WARN.
 - **Ids share one namespace with real users.** A signed-in user's canonical id

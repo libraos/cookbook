@@ -86,8 +86,9 @@ on a v0.2.2 kernel with the same model.
 - Customer Support: the PII redactor is off by default on v0.3.0; with the
   agent's `guardrails.pii_redactor: enabled` the model received the message
   with email and phone removed. One callback per order lookup.
-- Finance: `web_citations` came back empty on both versions. The sample issuer
-  is synthetic, so there is nothing on the web to cite. `search_web` itself
+- Finance: `web_citations` came back empty on both versions, most likely
+  because the sample issuer is synthetic (the runs did not record whether the
+  agent searched). `search_web` itself
   returns results here: with the MegaNova gateway the kernel searches through
   MegaNova with the same key.
 - Personal Assistant: `setup.sh`, then as the signed-in demo user: upload, cited
