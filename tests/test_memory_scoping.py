@@ -53,7 +53,7 @@ async def test_support_scopes_memory_per_customer_with_canonical_user():
     transport = recording(seen, lambda r: httpx.Response(200, json={"response": "fixture"}))
     async with httpx.AsyncClient(base_url="http://kernel", transport=transport) as http:
         await support.ask(http, "cust-1042", "Where is my order?")
-    assert seen[0].headers["X-Canonical-User"] == "cust-1042"
+    assert seen[0].headers["X-Canonical-User"] == "customer:cust-1042"
     assert "X-End-User" not in seen[0].headers
 
 
@@ -62,9 +62,16 @@ def bundled_agent(bundle: bytes, agent_id: str) -> str:
         return z.read(f"agents/{agent_id}.md").decode()
 
 
+def frontmatter_fields(agent_file: str) -> dict:
+    # The bundle writes one `key: <json>` line per field (JSON is valid YAML).
+    head = agent_file.split("---\n")[1]
+    return {k: json.loads(v) for k, v in (line.split(": ", 1) for line in head.splitlines())}
+
+
 def test_support_agent_declares_the_pii_redactor():
     # Off by default from kernel v0.3.0; this agent handles customer text.
-    assert 'guardrails: {"pii_redactor": "enabled"}' in bundled_agent(support.employee_bundle(), support.AGENT_ID)
+    fields = frontmatter_fields(bundled_agent(support.employee_bundle(), support.AGENT_ID))
+    assert fields["guardrails"]["pii_redactor"] == "enabled"
 
 
 async def test_triage_scopes_memory_per_patient_with_canonical_user(monkeypatch):
@@ -80,7 +87,7 @@ async def test_triage_scopes_memory_per_patient_with_canonical_user(monkeypatch)
     route_all(monkeypatch, recording(seen, reply))
     await triage.main()
     chat = next(r for r in seen if r.url.path == "/agents/v1/clinical-triage/chat")
-    assert chat.headers["X-Canonical-User"] == "PT-2026-0942"
+    assert chat.headers["X-Canonical-User"] == "patient:PT-2026-0942"
     assert "X-End-User" not in chat.headers
 
 

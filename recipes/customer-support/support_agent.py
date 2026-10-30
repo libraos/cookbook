@@ -150,8 +150,9 @@ async def ask(http: httpx.AsyncClient, customer: str, question: str) -> None:
         # each customer its own canonical user, so one customer's context never
         # reaches another's. X-End-User alone does not: all customers of this
         # credential would share one log. The header is honoured only for an
-        # admin-owned credential (an API key also needs allow_impersonation).
-        headers={"X-Canonical-User": customer},
+        # admin-owned credential (an API key minted on v0.3.0 also needs allow_impersonation).
+        # Prefixed so a customer id can never equal a real user's id.
+        headers={"X-Canonical-User": f"customer:{customer}"},
     )
     r.raise_for_status()
     print(f"\n[{customer}] Q: {question}\nA: {r.json()['response']}")

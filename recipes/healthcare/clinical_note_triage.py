@@ -130,7 +130,7 @@ async def main() -> None:
         #    flows on the request as X-Canonical-User so the agent's
         #    observational memory is scoped per patient — A's prior visits never
         #    bleed into B's reasoning. The header is honoured only for an
-        #    admin-owned credential (an API key also needs allow_impersonation).
+        #    admin-owned credential (an API key minted on v0.3.0 also needs allow_impersonation).
         #    A clinical note is a long prompt and `repair` may add a second
         #    pass: give the call room.
         async with httpx.AsyncClient(
@@ -145,7 +145,9 @@ async def main() -> None:
                         f"Produce a triage decision."
                     )
                 },
-                headers={"X-Canonical-User": patient_id},
+                # Prefixed so a patient id can never equal a real user's id
+                # (canonical ids share one namespace with signed-in users).
+                headers={"X-Canonical-User": f"patient:{patient_id}"},
             )
             r.raise_for_status()  # 422 output_violation if repair also fails
 

@@ -65,7 +65,7 @@ acceptable supporting documents, required facts and prohibited invented facts.
 An evaluator should assess source support and refusal semantics, not insist on
 one refusal phrase. This model-quality evaluation is not yet automated here.
 
-## Verification record — 2026-10-30 (kernel v0.3.0, every example)
+## Verification record — 2026-10-29 (kernel v0.3.0, every example)
 
 Kernel **v0.3.0** (`52cb8d7b`), the get-started Compose file from fresh volumes
 (its default is now v0.3.0), MegaNova gateway with `gemini/gemini-2.5-flash`,
@@ -86,8 +86,10 @@ on a v0.2.2 kernel with the same model.
 - Customer Support: the PII redactor is off by default on v0.3.0; with the
   agent's `guardrails.pii_redactor: enabled` the model received the message
   with email and phone removed. One callback per order lookup.
-- Finance: `web_citations` is empty on both versions because the get-started
-  environment has no search backend (`search_web` says so); see `.env.example`.
+- Finance: `web_citations` came back empty on both versions. The sample issuer
+  is synthetic, so there is nothing on the web to cite. `search_web` itself
+  returns results here: with the MegaNova gateway the kernel searches through
+  MegaNova with the same key.
 - Personal Assistant: `setup.sh`, then as the signed-in demo user: upload, cited
   answer from the document, conversation list and read, recall in a new
   conversation, memory panel, delete. In Chrome: OIDC sign-in, chat, history.
