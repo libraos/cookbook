@@ -101,7 +101,9 @@ async def moderate(http: httpx.AsyncClient, content: str) -> dict:
     is the parsed, schema-valid object. A reply that still violates the
     schema after the repair pass is a 422 `output_violation`.
     """
-    r = await http.post("/agents/v1/content-moderator/chat", json={"message": content})
+    # no_memory: each item is judged on its own. With memory on, verdicts on
+    # earlier items are recalled into this one and steer it.
+    r = await http.post("/agents/v1/content-moderator/chat", json={"message": content, "no_memory": True})
     r.raise_for_status()
     return r.json()["output"]
 

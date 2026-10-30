@@ -18,7 +18,7 @@ End-to-end worked example: a partner sends user-generated content to a moderatio
 
 ## Run
 
-Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
+Tested against kernel v0.3.0 with `libraos-sdk` 2.0.0.
 
 ```bash
 pip install libraos-sdk
@@ -35,7 +35,7 @@ python content_moderation.py
 Verdict accuracy: 6/6 = 100%
 ```
 
-Scores and the exact accuracy depend on the model the kernel routes the skill tier to. A smoke check is the last line: `python content_moderation.py | grep accuracy`.
+Scores and the exact accuracy depend on the model the kernel routes the skill tier to. With `gemini/gemini-2.5-flash` on kernel v0.3.0 the run scored 4/6 and 5/6: the model blocks some items the labels mark `flag` (harassment, shared personal details). Treat the labelled set as a starting point for calibrating your bands. A smoke check is the last line: `python content_moderation.py | grep accuracy`.
 
 ## Adapting to your data
 

@@ -4,10 +4,12 @@ End-to-end partner-side script:
     1. Creates a `clinical-triage` agent whose reply is validated against a
        JSON-schema contract — partners receive a typed `{urgency, action, red_flags}`
        object every time, no free-text parsing.
-    2. Sends a synthetic clinical note. The `X-End-User` header carries the
-       partner's stable internal patient identifier so the agent's
-       observational memory is scoped per-patient (HIPAA-style minimum-necessary
+    2. Sends a synthetic clinical note. The `X-Canonical-User` header carries
+       the partner's stable internal patient identifier so the agent's
+       observational memory is scoped per patient (HIPAA-style minimum-necessary
        isolation — patient A's conversation history never bleeds into B's).
+       `X-End-User` alone does not do this: every end user of one service
+       credential shares a single memory log per agent.
     3. Prints the validated triage decision.
 
 `output_type` is enforced on the agent chat endpoint, `POST
@@ -125,10 +127,12 @@ async def main() -> None:
         # 2. Send the note to the agent chat endpoint, which validates the
         #    reply against TRIAGE_SCHEMA (re-prompting once on a violation)
         #    and returns the parsed object as `output`. The patient identifier
-        #    flows on the request as X-End-User so the agent's observational
-        #    memory is scoped per patient — A's prior visits never bleed into
-        #    B's reasoning. A clinical note is a long prompt and `repair` may
-        #    add a second pass: give the call room.
+        #    flows on the request as X-Canonical-User so the agent's
+        #    observational memory is scoped per patient — A's prior visits never
+        #    bleed into B's reasoning. The header is honoured only for an
+        #    admin-owned credential (an API key also needs allow_impersonation).
+        #    A clinical note is a long prompt and `repair` may add a second
+        #    pass: give the call room.
         async with httpx.AsyncClient(
             base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=300
         ) as http:
@@ -141,7 +145,7 @@ async def main() -> None:
                         f"Produce a triage decision."
                     )
                 },
-                headers={"X-End-User": patient_id},
+                headers={"X-Canonical-User": patient_id},
             )
             r.raise_for_status()  # 422 output_violation if repair also fails
 

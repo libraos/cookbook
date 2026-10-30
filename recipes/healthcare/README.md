@@ -5,7 +5,7 @@ End-to-end worked example: a healthcare partner sends a clinical-note text to a 
 ## What this demonstrates
 
 - **`output_type` JSON-schema validation** — the agent's reply is validated server-side against a contract before it leaves LibraOS. Partners' downstream code (EHR write-back, alerting, dashboards) gets a typed object every time, with no probabilistic free-text parsing. The validation runs on the agent chat endpoint, `POST /agents/v1/<agent>/chat`, which returns the parsed object as `output` — that is the call the script makes.
-- **Per-end-user identity passthrough (`X-End-User`)** — every call carries the partner's internal patient identifier on the request. LibraOS scopes the agent's observational memory to that identity so a triage decision for patient A never bleeds into patient B's session — a hard requirement for HIPAA-style minimum-necessary access.
+- **Per-patient memory (`X-Canonical-User`)** — every call carries the partner's internal patient identifier on the request. LibraOS keeps one observational-memory log per canonical user and agent, so this header gives each patient its own log and a triage decision for patient A never bleeds into patient B's session — a hard requirement for HIPAA-style minimum-necessary access. `X-End-User` is **not** enough: all end users of one service credential share a single log (verified on kernel v0.2.2 and v0.3.0). The header is honoured only for an admin-owned credential; on v0.3.0 an API key also needs `"allow_impersonation": true`.
 - **`brain=false` + `tool_scope="none"`** — one note in, one decision out on the skill tier; triage needs no tools, so the catalog stays out of the prompt.
 - **Three violation modes for output validation** — `error` (reject + 422), `log` (return as-is + telemetry), `repair` (one bounded retry with the schema in the system prompt). The example uses `repair` because in clinical settings you'd rather a slightly slower second pass than a 422 the partner has to re-prompt.
 
@@ -18,7 +18,7 @@ End-to-end worked example: a healthcare partner sends a clinical-note text to a 
 
 ## Run
 
-Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
+Tested against kernel v0.3.0 with `libraos-sdk` 2.0.0.
 
 ```bash
 pip install 'libraos-sdk>=2.0.0'

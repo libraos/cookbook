@@ -8,13 +8,19 @@ End-to-end partner-side script:
        live order status.
     3. Asks one KB question (grounded answer) and one action question (tool call).
 
-Custom tools live in the agent definition file (`custom_tools:` frontmatter),
-which is why the agent is created from a bundle rather than with
-`c.agents.create(...)`: the bundle import is the API that takes an agent file.
+Custom tools live in the agent definition file (`custom_tools:` frontmatter)
+of an employee bundle. From kernel v0.3.0, `POST /v1/agents` takes
+`custom_tools` too (see the Tools recipe); the bundle keeps the agent and its
+owning employee together.
 
-The default PII-redactor and AI-Firewall guardrails stay on — a support agent
-handles customer text, so inbound abuse protection and outbound PII scrubbing
-are exactly what you want. See the README for when to relax them.
+The agent declares the PII redactor (off by default from kernel v0.3.0) and
+keeps the default AI Firewall: a support agent handles customer text, so
+inbound abuse protection and outbound PII scrubbing are what you want. See the
+README for when to relax them.
+
+Each customer's memory is kept apart with the `X-Canonical-User` header. The
+SDK's `end_user=` (sent as `X-End-User`) does not separate memory: every end
+user of one service credential shares a single memory log per agent.
 
 Pair with `webhook_server.py` (FastAPI) running on `${LIBRA_OS_CB_URL}` so the
 order-lookup tool callback has somewhere to land. The LibraOS host signs every
@@ -122,6 +128,8 @@ def employee_bundle() -> bytes:
         "tool_scope": "none",
         "knowledge_bindings": [COLLECTION],
         "custom_tools": CUSTOM_TOOLS,
+        # Off by default from kernel v0.3.0; this agent handles customer text.
+        "guardrails": {"pii_redactor": "enabled"},
     }
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
@@ -134,28 +142,19 @@ def employee_bundle() -> bytes:
     return buf.getvalue()
 
 
-async def reload_agents(c: Client) -> None:
-    """Make the kernel load the bundle's agent file.
-
-    Kernel v0.2.2 registers the bundle's employee at once but reads its agent
-    file on the next agent-registry reload, which any write to `/v1/agents`
-    (or a SIGHUP to the kernel) triggers. A throwaway agent write is that
-    nudge.
-    """
-    await c.agents.create(id=f"{AGENT_ID}-reload", type="skill", tool_scope="none", system="reload")
-    await c.agents.delete(f"{AGENT_ID}-reload")
-
-
-async def ask(c: Client, customer: str, question: str) -> None:
-    resp = await c.messages.create(
-        agent_id=AGENT_ID,
-        messages=[{"role": "user", "content": question}],
-        # Sent as X-End-User: memory is kept per customer, so one customer's
-        # context never reaches another's session.
-        end_user=customer,
+async def ask(http: httpx.AsyncClient, customer: str, question: str) -> None:
+    r = await http.post(
+        f"/agents/v1/{AGENT_ID}/chat",
+        json={"message": question},
+        # Memory is one log per (canonical user, agent). X-Canonical-User makes
+        # each customer its own canonical user, so one customer's context never
+        # reaches another's. X-End-User alone does not: all customers of this
+        # credential would share one log. The header is honoured only for an
+        # admin-owned credential (an API key also needs allow_impersonation).
+        headers={"X-Canonical-User": customer},
     )
-    text = resp.text
-    print(f"\n[{customer}] Q: {question}\nA: {text}")
+    r.raise_for_status()
+    print(f"\n[{customer}] Q: {question}\nA: {r.json()['response']}")
 
 
 async def main() -> None:
@@ -177,10 +176,10 @@ async def main() -> None:
             await c.agents.delete(AGENT_ID)
 
         # 3. Import the employee + agent. on_conflict=overwrite makes re-runs
-        #    (and runs after a failed run) idempotent. PII-redactor + firewall
-        #    guardrails are on by default (not declared here).
+        #    (and runs after a failed run) idempotent. From kernel v0.3.0 the
+        #    import also loads the agent, so it can chat at once.
         async with httpx.AsyncClient(
-            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=60
+            base_url=base_url, headers={"Authorization": f"Bearer {api_key}"}, timeout=180
         ) as http:
             r = await http.post(
                 "/v1/managed/employees/bundle/import",
@@ -190,13 +189,12 @@ async def main() -> None:
             )
             r.raise_for_status()
             print(f"Imported bundle: {r.json()}")
-        await reload_agents(c)
 
-        # 4a. Knowledge question — answered from the bound KB.
-        await ask(c, "cust-1042", "What's your refund window, and are digital downloads refundable?")
+            # 4a. Knowledge question — answered from the bound KB.
+            await ask(http, "cust-1042", "What's your refund window, and are digital downloads refundable?")
 
-        # 4b. Action question — the agent calls the order_lookup webhook tool.
-        await ask(c, "cust-1042", "Where is my order ORD-5591? It still hasn't arrived.")
+            # 4b. Action question — the agent calls the order_lookup webhook tool.
+            await ask(http, "cust-1042", "Where is my order ORD-5591? It still hasn't arrived.")
 
         # 5. Cleanup for dev loops.
         for remove, name in ((c.agents.delete, AGENT_ID), (c.employees.delete, EMPLOYEE_ID)):

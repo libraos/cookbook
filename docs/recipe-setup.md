@@ -58,6 +58,26 @@ deployment requires SSO/MFA, use its supported sign-in flow to obtain normal-use
 access tokens instead. The memory preflight checks `/oauth/userinfo`, rejects
 admin identities and equal subjects, and checks that memory is enabled.
 
+## Shared memory in the local kernel
+
+The get-started Compose file turns observational memory on for the personal
+assistant, and it applies to every agent. The kernel keeps one memory log per
+(canonical user, agent) and recalls it into later turns: questions and answers,
+not the tool results behind them. Two consequences for recipes:
+
+- **Stateless recipes send `no_memory: true`.** Ticket Routing, Content
+  Moderation, Legaltech and Tools classify or extract one input at a time. With
+  memory on, earlier verdicts were recalled into later inputs and repeated: a
+  wrong answer kept coming back, and Legaltech dropped the precedent scores its
+  webhook had just returned.
+- **Per-customer or per-patient memory needs `X-Canonical-User`.** All callers of
+  one service credential share a single log, whatever `X-End-User` (the SDK's
+  `end_user=`) says: customer B could recall customer A's details. Healthcare
+  and Customer Support send `X-Canonical-User`, which gives each id its own log.
+  It is honoured only for an admin-owned credential; on kernel v0.3.0 an API key
+  also needs `"allow_impersonation": true`. Signed-in users (the personal
+  assistant, the Memory recipe) are separated by their own tokens.
+
 ## Tests and cleanup
 
 ```bash

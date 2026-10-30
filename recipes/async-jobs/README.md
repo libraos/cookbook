@@ -80,7 +80,7 @@ and returns a nonzero exit code. `failed` exits 1; `cancelled` exits 2.
 python -m pytest tests/test_async_jobs.py
 
 # Runtime and model required; first-assistant must exist.
-COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k async --junitxml=live-results.xml
+COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k async_submit --junitxml=live-results.xml
 ```
 
 The live test checks submit/resume/completion. Failure/cancellation interleavings

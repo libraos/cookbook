@@ -51,9 +51,10 @@ docker compose logs -f libraos     # watch it boot
 The kernel listens on <http://localhost:8900>. Then run the examples above,
 each from its own folder.
 
-The compose file runs kernel **v0.2.2** (`ghcr.io/libraos/libraos:v0.2.2`).
-Set `LIBRAOS_VERSION` to run another; the personal assistant needs v0.2.2 or
-newer as documented here. `curl http://localhost:8900/api/version` shows the
+The compose file runs kernel **v0.3.0** (`ghcr.io/libraos/libraos:v0.3.0`).
+Set `LIBRAOS_VERSION` to run another. The examples here are checked on v0.3.0;
+the Tools recipe needs it, and a database migrated by 0.3 should not be run
+with 0.2.x again (roll forward, not back). `curl http://localhost:8900/api/version` shows the
 one running.
 
 What the compose file turns on besides the kernel and Postgres (each line is

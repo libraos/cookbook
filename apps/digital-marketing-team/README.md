@@ -55,9 +55,8 @@ mission without replaying completed work.
 
 ## Run it
 
-Start the kernel from [`get-started/`](../../get-started/) on **v0.2.2 or
-later** (`LIBRAOS_VERSION=v0.2.2` in `get-started/.env` if the compose default
-is older). The mission engine needs PostgreSQL, the workflow runtime and this
+Start the kernel from [`get-started/`](../../get-started/) (kernel v0.3.0 by
+default; checked on v0.3.0). The mission engine needs PostgreSQL, the workflow runtime and this
 app's sign-in client, which the get-started compose file and `.env.example`
 already set:
 
@@ -112,6 +111,12 @@ app or the pack changes those prompts (they are compiled into the kernel; see
 [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660)):
 click **New mission** and submit again, or use a stronger model for
 `LIBRA_OS_SKILL_MODEL`.
+
+Measured with `gemini/gemini-2.5-flash` through the MegaNova gateway: on kernel
+v0.3.0, 5 of 10 missions got past planning and each produced a report after one
+approved decision; on v0.2.2, 3 of 4. The failures were plans with a decision
+placed outside its tasks' dependency chain (both versions) and, on v0.3.0 only,
+a plan that was not valid JSON (2 of 10). Expect to resubmit sometimes.
 
 A mission is roughly a dozen model calls run three at a time, so on a local
 model expect it to take a while; the page follows the durable event stream

@@ -6,7 +6,7 @@ End-to-end worked example: a legal-tech partner ingests an MSA (Master Services 
 
 - **Structured output (`output_type`)** — the agent's reply is validated against a JSON Schema before it leaves LibraOS, so the partner gets a typed `{clauses: [...]}` object instead of free-text it has to re-parse. The validation (and the `repair` retry) runs on the agent chat endpoint, `POST /agents/v1/<agent>/chat`, which returns the parsed object as `output` — that is the call the script makes.
 - **Mode B custom-tool webhook** — when the agent decides it needs to look up precedent for a clause, LibraOS POSTs a signed JSON payload to the partner's webhook (`X-LibraOS-Signature`, with the older `X-Nova-Signature` as fallback). The partner runs the lookup against its own clause DB and returns the result. This is the integration pattern most legal-tech partners use because the precedent corpus is partner IP and never leaves their network.
-- **Employee + agent as a bundle** — custom tools live in the agent definition file (`custom_tools:` frontmatter), so the script builds the `contracts-reviewer` employee and its agent as a bundle zip in memory and imports it with `POST /v1/managed/employees/bundle/import`. The employee is where a per-employee `model_config` cascade would go. Kernel v0.2.2 reads the bundle's agent file on the next agent-registry reload (any write to `/v1/agents`, or a SIGHUP), so the script nudges one with a throwaway agent write (`reload_agents`).
+- **Employee + agent as a bundle** — custom tools live in the agent definition file (`custom_tools:` frontmatter), so the script builds the `contracts-reviewer` employee and its agent as a bundle zip in memory and imports it with `POST /v1/managed/employees/bundle/import`. The employee is where a per-employee `model_config` cascade would go. From kernel v0.3.0 the import loads the agent at once, and `POST /v1/agents` also takes `custom_tools` (see [Tools](../tool-calling/)).
 
 ## Files
 
@@ -18,7 +18,7 @@ End-to-end worked example: a legal-tech partner ingests an MSA (Master Services 
 
 ## Run
 
-Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
+Tested against kernel v0.3.0 with `libraos-sdk` 2.0.0.
 
 The kernel signs callbacks with a secret it holds itself, named by the tool's `secret_ref`, and only sends them to hosts it is allowed to. On the LibraOS host:
 

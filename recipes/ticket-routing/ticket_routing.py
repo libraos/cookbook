@@ -90,7 +90,9 @@ async def classify(http: httpx.AsyncClient, ticket: str) -> dict:
     the parsed, schema-valid object. A reply that still violates the schema
     after the repair pass is a 422 `output_violation`.
     """
-    r = await http.post("/agents/v1/ticket-router/chat", json={"message": ticket})
+    # no_memory: each ticket is classified on its own. With memory on, the
+    # verdicts on earlier tickets are recalled into this one and steer it.
+    r = await http.post("/agents/v1/ticket-router/chat", json={"message": ticket, "no_memory": True})
     r.raise_for_status()
     verdict = r.json()["output"]
     validate(verdict, INTENT_SCHEMA)

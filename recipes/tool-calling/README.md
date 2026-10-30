@@ -30,7 +30,7 @@ environment with the tool overlay:
 
 ```bash
 export LIBRA_OS_CALLBACK_SECRET_COOKBOOK="$(openssl rand -hex 32)"
-LIBRAOS_VERSION=v0.3.0 docker compose --env-file get-started/.env \
+docker compose --env-file get-started/.env \
   -f get-started/docker-compose.yml -f recipes/tool-calling/compose.yaml up -d
 cd recipes/tool-calling
 python webhook_server.py

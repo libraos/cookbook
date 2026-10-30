@@ -18,7 +18,7 @@ services:
       retries: 30
 
   libraos:
-    image: ghcr.io/libraos/libraos:${LIBRAOS_VERSION:-v0.2.2}
+    image: ghcr.io/libraos/libraos:${LIBRAOS_VERSION:-v0.3.0}
     depends_on:
       postgres: { condition: service_healthy }
     # Host port LIBRAOS_PORT (default 8900). If you change it, change
