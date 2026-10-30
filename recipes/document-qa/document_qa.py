@@ -79,10 +79,11 @@ async def ask(c: Client, question: str) -> None:
 async def recreate_collection(base_url: str, api_key: str) -> None:
     """Start the collection over, registered so an agent can be bound to it.
 
-    Ingest creates a collection that search can use, but on runtime v0.2.2 not
-    one an agent can be bound to: the binding is dropped with only a log line
-    (libraos/libraos#615). Creating it first registers it. The SDK has no call
-    for this yet, so it is one admin HTTP request.
+    Before kernel v0.3.0, ingest created a collection that search could use but
+    not one an agent could be bound to: the binding was dropped with only a
+    log line (libraos/libraos#615, fixed by #1732). Deleting and creating it
+    also starts each run from an empty collection. The SDK has no call for
+    this yet, so it is one admin HTTP request.
     """
     headers = {"authorization": f"Bearer {api_key}"}
     async with httpx.AsyncClient(base_url=base_url, headers=headers, timeout=60) as h:

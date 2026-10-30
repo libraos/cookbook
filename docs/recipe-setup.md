@@ -58,6 +58,46 @@ deployment requires SSO/MFA, use its supported sign-in flow to obtain normal-use
 access tokens instead. The memory preflight checks `/oauth/userinfo`, rejects
 admin identities and equal subjects, and checks that memory is enabled.
 
+## Shared memory in the local kernel
+
+The get-started Compose file turns observational memory on for the personal
+assistant, and it applies to every agent. The kernel keeps one memory log per
+canonical user and agent (within an org, and per `memory_scope` when an agent
+sets one), and recalls observations condensed from earlier questions and
+answers into later turns. The tool results behind those answers are not kept.
+Two consequences for recipes:
+
+- **Stateless recipes send `no_memory: true`.** Ticket Routing, Content
+  Moderation, Legaltech and Tools classify or extract one input at a time. With
+  memory on, earlier verdicts were recalled into later inputs and repeated: a
+  wrong answer kept coming back, and Legaltech dropped the precedent scores its
+  webhook had just returned.
+- **Per-customer or per-patient memory needs `X-Canonical-User`.** All callers of
+  one service credential share a single log, whatever `X-End-User` (the SDK's
+  `end_user=`) says: customer B could recall customer A's details. Healthcare
+  and Customer Support send `X-Canonical-User`, which gives each id its own log.
+  Signed-in users (the personal assistant, the Memory recipe) are separated by
+  their own tokens.
+
+Before relying on `X-Canonical-User`:
+
+- **It needs the impersonation capability, and fails silently without it.** An
+  admin-owned credential has it; an API key minted on kernel v0.3.0 also needs
+  `"allow_impersonation": true` (keys from earlier releases kept it). Without
+  the capability the header is ignored, with no error, and every end user
+  shares the credential's own log. Check once: state a marker under one id,
+  then confirm a second id cannot recall it.
+- **Every use is audited as impersonation.** The kernel logs
+  `identity override: caller acted as another subject` with the id at WARN.
+- **Ids share one namespace with real users.** A signed-in user's canonical id
+  is their token subject, so an end-user id that equals one would read and write
+  that user's memory. The recipes prefix theirs: `customer:…`, `patient:…`.
+
+Document Q&A calls `/v1/messages` through the SDK, which keeps memory and has no
+`no_memory` switch. Its answers were stable across repeated runs; a stateless
+integration that sees earlier answers repeated should use native chat with
+`no_memory`.
+
 ## Tests and cleanup
 
 ```bash

@@ -88,7 +88,7 @@ also link to their LibraOS documentation companion.
 | Recipe | What it shows |
 |---|---|
 | [`recipes/legaltech/`](recipes/legaltech/) | Contract clause extraction with structured output + a Mode B custom-tool webhook for partner-side precedent lookup |
-| [`recipes/healthcare/`](recipes/healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-end-user identity passthrough for HIPAA-style isolation |
+| [`recipes/healthcare/`](recipes/healthcare/) | Clinical-note triage with `output_type` JSON-schema validation + per-patient memory isolation (`X-Canonical-User`) |
 | [`recipes/finance/`](recipes/finance/) | 10-K filing diff using the async-job pattern for long documents, with `search_web` for live market-data enrichment |
 
 ## Common prerequisites (recipes)
@@ -109,10 +109,10 @@ All sample inputs are **synthetic**. The legaltech MSA, the healthcare clinical 
 
 The Python protocol suite pins SDK **2.0.0** and its direct test dependencies in
 `requirements-dev.txt`. New examples list their runtime dependencies separately.
-The local Compose environment defaults to kernel **v0.2.2**. Original examples
-record their v0.2.2 smoke checks in their READMEs; the three new P0 examples have
-offline protocol tests and await their own live verification. A Compose pin is
-not evidence that every new recipe passed a live run on that release.
+The local Compose environment defaults to kernel **v0.3.0**. Every example was
+run on v0.3.0 from fresh Compose volumes; each README states what was checked,
+and the [verification record](docs/validation.md) lists the results. A Compose
+pin is not evidence that a later release passes the same checks.
 See the [verification record](docs/validation.md) for the distinction.
 
 Implementation and Runtime issues are tracked in

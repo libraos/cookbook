@@ -6,9 +6,9 @@ End-to-end worked example: a support agent that answers product and policy quest
 
 - **Knowledge grounding** — `knowledge_bindings: ["support-kb"]` scopes the agent's retrieval to your ingested policies/FAQs, so answers cite your documents instead of the model's training data.
 - **Mode B custom tool (`order_lookup`)** — the agent decides, per turn, whether to answer from the KB or fetch live data. When it needs live data LibraOS POSTs a signed payload to the tool's `callback.url`; `webhook_server.py` (FastAPI) verifies the HMAC signature (`X-LibraOS-Signature`, with the older `X-Nova-Signature` as fallback) and returns the order status. Replace the toy `_ORDER_DB` with your real OMS.
-- **Agent defined as an employee bundle** — custom tools live in the agent definition file (`custom_tools:` frontmatter), so the script builds the employee + agent as a bundle zip in memory and imports it with `POST /v1/managed/employees/bundle/import` — the same format `employees/{id}/bundle/export` produces. `c.agents.create(...)` does not take `custom_tools`. Kernel v0.2.2 reads the bundle's agent file on the next agent-registry reload (any write to `/v1/agents`, or a SIGHUP), so the script nudges one with a throwaway agent write (`reload_agents`).
-- **Guardrails on by default** — a support agent handles untrusted customer text, so the inbound **AI Firewall** (prompt-injection / abuse) and the outbound **PII redactor** stay on. You don't configure anything to get them.
-- **Per-customer memory scoping** — the `X-End-User` header carries your stable customer id, so one customer's context never bleeds into another's session.
+- **Agent defined as an employee bundle** — custom tools live in the agent definition file (`custom_tools:` frontmatter), so the script builds the employee + agent as a bundle zip in memory and imports it with `POST /v1/managed/employees/bundle/import` — the same format `employees/{id}/bundle/export` produces. From kernel v0.3.0, `POST /v1/agents` also takes `custom_tools` (see [Tools](../tool-calling/)) and a bundle import loads its agents at once; the bundle keeps the agent and its owning employee together.
+- **Guardrails on** — a support agent handles untrusted customer text, so the inbound **AI Firewall** (prompt-injection / abuse, on by default) and the outbound **PII redactor** stay on. The redactor is off by default from kernel v0.3.0, so the agent declares `guardrails: {pii_redactor: enabled}`.
+- **Per-customer memory scoping** — the `X-Canonical-User` header carries your stable customer id, so one customer's context never bleeds into another's session. `X-End-User` (the SDK's `end_user=`) is **not** enough: all end users of one service credential share a single memory log per agent (verified on kernel v0.2.2 and v0.3.0). The header is honoured only for an admin-owned credential (an API key minted on v0.3.0 also needs `"allow_impersonation": true`) and is ignored silently otherwise; the id is prefixed so it cannot equal a real user's. See [before relying on it](../../docs/recipe-setup.md#shared-memory-in-the-local-kernel). The script calls the native chat endpoint because the SDK's `messages.create` cannot set it.
 
 ## Files
 
@@ -20,7 +20,7 @@ End-to-end worked example: a support agent that answers product and policy quest
 
 ## Run
 
-Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0. Needs `libraos-sdk` 2.0 or later: `end_user=` on `messages.create` is new in 2.0.
+Tested against kernel v0.3.0 with `libraos-sdk` 2.0.0.
 
 **On the LibraOS host** — the kernel signs callbacks with a secret it holds itself, named by the tool's `secret_ref`, and only sends them to hosts it is allowed to:
 
@@ -66,7 +66,7 @@ Terminal 1 logs one `POST /nova/cb/...` per tool call; that line is the smoke ch
 - **Real KB.** Replace `sample_support_kb.md` with your actual help-centre content, or upload files with `c.documents.upload(...)`. See the [`document-qa`](../document-qa/) recipe for retrieval tuning.
 - **Real tools.** Point `_ORDER_DB` at your OMS. Add more tools (issue a refund, create a ticket, check inventory) by appending to `CUSTOM_TOOLS` and adding a matching `@router.tool(...)` handler. High-risk, side-effecting tools can be gated behind the dry-run / approval flow (`LIBRA_OS_PENDING_ACTIONS_ENABLED`).
 - **Different secret name.** `LIBRA_OS_CB_SECRET_REF` overrides the `secret_ref` (default `LIBRA_OS_CALLBACK_SECRET_SUPPORT`); the kernel only signs with variables in its `LIBRA_OS_CALLBACK_SECRET_*` namespace or an explicit `LIBRA_OS_CALLBACK_SECRET_REFS` allowlist.
-- **Relax PII redaction only where a workflow needs raw names.** The redactor is on by default; disable it (`guardrails.pii_redactor: disabled`) *only* on a persona whose job legitimately handles raw customer identifiers, never platform-wide.
+- **Relax PII redaction only where a workflow needs raw names.** This agent enables the redactor explicitly; remove that line (or set `guardrails.pii_redactor: disabled`) *only* on an agent whose job legitimately handles raw customer identifiers.
 - **Streaming.** For a progressive chat UI, the HTTP surface streams token deltas (`stream=true` on `POST /v1/chat/completions`, or `metadata.stream_events` on the native chat endpoint). Use a streaming model (`gpt-*`, `claude-*`) for smooth output.
 
 ## Prose companion

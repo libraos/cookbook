@@ -31,9 +31,12 @@ It uploads JUnit results. This suite is deterministic and suitable for PR gating
 | Tool Action Approval | Not implemented as a standalone tutorial yet | Approval/rejection/permission and exactly-once side effects tracked in the core repository |
 | Marketing Mission | Stream replay/reconnect, event dedup, pending decision, report and failure states | Full mission/model run remains separate from client protocol tests |
 
-Customer Support and Legaltech use the bundle registration workaround validated
-in [PR #14](https://github.com/libraos/cookbook/pull/14). The REST registration
-contract still has a [follow-up task](https://github.com/libraos/libraos/issues/1729).
+Customer Support and Legaltech register their agent from an employee bundle. From
+kernel v0.3.0 the import loads the agent itself (#1731), and `POST /v1/agents`
+also takes `custom_tools` ([#1729](https://github.com/libraos/libraos/issues/1729)),
+which the Tools recipe uses. `tests/test_memory_scoping.py` checks which memory
+each recipe reads: `no_memory` on stateless recipes, `X-Canonical-User` on
+per-customer and per-patient ones.
 
 ## Opt-in Runtime/model evaluation
 
@@ -43,7 +46,7 @@ to be present. Configure only the selected recipe's prerequisites, then run:
 ```bash
 COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k memory --junitxml=live-results.xml
 COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k tool_lookup --junitxml=live-results.xml
-COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k async --junitxml=live-results.xml
+COOKBOOK_LIVE=1 python -m pytest tests/test_live.py -k async_submit --junitxml=live-results.xml
 ```
 
 Use a disposable environment: live runs create agents/jobs and may incur model
@@ -61,6 +64,44 @@ For Q&A evaluation, separately label whether the question is answerable, the
 acceptable supporting documents, required facts and prohibited invented facts.
 An evaluator should assess source support and refusal semantics, not insist on
 one refusal phrase. This model-quality evaluation is not yet automated here.
+
+## Verification record — 2026-10-29 (kernel v0.3.0, every example)
+
+Kernel **v0.3.0** (`52cb8d7b`), the get-started Compose file from fresh volumes
+(its default is now v0.3.0), MegaNova gateway with `gemini/gemini-2.5-flash`,
+SDK 2.0.0. Where a result looked like a regression, the same run was repeated
+on a v0.2.2 kernel with the same model.
+
+- First Agent (Python, Bash, TypeScript), Ticket Routing, Content Moderation,
+  Healthcare, Finance, Document Q&A, Async Jobs, Memory, Tools, Customer
+  Support and Legaltech run to completion. Live tests: `memory`, `async_submit`,
+  `tool_lookup` and `webhook_unavailable` pass.
+- Shared observational memory skewed stateless recipes on both versions. With
+  `no_memory`: Legaltech kept all four precedent scores in 2 of 2 runs (0 of 4
+  replays with memory recalled); Ticket Routing 9/10 and 10/10 (8/10 with
+  memory); Content Moderation 5/6 and 4/6 (3/6 twice with memory).
+- `X-End-User` (and the SDK's `end_user=`) did not separate memory on v0.2.2 or
+  v0.3.0: end user B recalled A's marker through one service credential.
+  `X-Canonical-User` kept them apart. Healthcare and Customer Support now send it.
+- Customer Support: the PII redactor is off by default on v0.3.0; with the
+  agent's `guardrails.pii_redactor: enabled` the model received the message
+  with email and phone removed. One callback per order lookup.
+- Finance: `web_citations` came back empty on both versions, most likely
+  because the sample issuer is synthetic (the runs did not record whether the
+  agent searched). `search_web` itself
+  returns results here: with the MegaNova gateway the kernel searches through
+  MegaNova with the same key.
+- Personal Assistant: `setup.sh`, then as the signed-in demo user: upload, cited
+  answer from the document, conversation list and read, recall in a new
+  conversation, memory panel, delete. In Chrome: OIDC sign-in, chat, history.
+  Fixed a crash after sign-in on current Chrome (`scrollIntoView` returns a
+  Promise, which an expression-bodied effect handed to React as its cleanup).
+- Marketing mission through the shared mission client: 5 of 10 missions on
+  v0.3.0 planned, answered one decision and produced a report; 3 of 4 on v0.2.2.
+  Failures were invalid plans on both versions and, on v0.3.0 only, a plan that
+  was not valid JSON (2 of 10). Tracked as a kernel follow-up.
+- All four web apps build; `setup.sh` for both apps succeeds.
+- Offline: 64 Python tests passed, 9 mission client tests passed.
 
 ## Verification record — 2026-10-29 (Tool Calling)
 
@@ -91,7 +132,7 @@ one refusal phrase. This model-quality evaluation is not yet automated here.
 - Mission client: Node 24 locally; CI targets Node 22 with type stripping.
 - New P0 live Runtime/model runs: **not performed**. No Runtime release is
   certified by the mocked tests.
-- Common Compose default: kernel v0.2.2. Record `/api/version` when running live;
+- Compose default at the time: kernel v0.2.2. Record `/api/version` when running live;
   do not treat that default as evidence of feature parity with current source.
 - Async issue #1708: closed when checked; HTTP example retains native shapes.
 - Baseline integration: [PR #12](https://github.com/libraos/cookbook/pull/12),

@@ -18,7 +18,7 @@ End-to-end worked example: a partner sends raw ticket text to a classifier agent
 
 ## Run
 
-Tested against kernel v0.2.2 with `libraos-sdk` 2.0.0.
+Tested against kernel v0.3.0 with `libraos-sdk` 2.0.0.
 
 ```bash
 pip install libraos-sdk jsonschema

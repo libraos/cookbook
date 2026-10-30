@@ -61,8 +61,9 @@ with different labels/models; report failures separately from protocol CI.
 
 Do not substitute a single admin token with different `end_user` values for
 these two normal-user tokens. Trusted service impersonation, canonical user
-identity and regular-user permissions have different contracts. The existing
-customer-support pattern must be checked for the chosen integration identity.
+identity and regular-user permissions have different contracts. For one service
+credential serving many end users, see
+[shared memory in the local kernel](../../docs/recipe-setup.md#shared-memory-in-the-local-kernel).
 
 **Validation status:** SDK 2.0.0 protocol tests pass. Live Runtime/model results
 have not been recorded for this new example. See [validation](../../docs/validation.md).

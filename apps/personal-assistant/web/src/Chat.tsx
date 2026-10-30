@@ -25,7 +25,11 @@ export function Chat({ conversationId, onSaved, onError }: Props) {
       .catch(onError);
   }, [conversationId, onError]);
 
-  useEffect(() => bottom.current?.scrollIntoView({ block: "end" }), [messages, busy, partial]);
+  // A block body: current Chrome returns a Promise from scrollIntoView, and an
+  // effect that returns anything but a function crashes React on unmount.
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [messages, busy, partial]);
 
   async function send() {
     const text = draft.trim();

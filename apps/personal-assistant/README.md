@@ -33,7 +33,7 @@ normal user, not an admin.
 
 ## Quickstart
 
-1. Start the kernel (v0.2.2) from
+1. Start the kernel (v0.3.0) from
    [`get-started/`](../../get-started/README.md). Its
    `docker-compose.yml` already mounts `libraos-app/` into the kernel and
    switches on memory and document indexing. In `get-started/.env`, set
@@ -156,15 +156,18 @@ Things worth knowing:
 
 ## Not yet
 
-Left out on purpose, because today's kernel (v0.2.2) can't do them, or can't
-do them for a normal user:
+Left out on purpose. Some the kernel can't do for a normal user; others it
+can, but this app doesn't use yet:
 
 - **Personal Gmail or calendar.** Connectors are organization-wide, set up by
   an admin; there is no per-user mailbox or calendar a normal user can connect.
 - **Acting for you, with your approval.** Actions with side effects go through
-  the kernel's approval queue, and only admins can approve. A user can't
-  approve their own assistant's action, so this assistant only talks.
-- **Scheduled tasks or a daily briefing.** The kernel has no scheduler.
+  the kernel's approval queue. An agent with `approval: self` lets the user it
+  acted for approve its low- and medium-risk actions (never high); this
+  assistant has no side-effecting tools, so it only talks.
+- **Scheduled tasks or a daily briefing.** The kernel runs per-user schedules
+  (`/v1/managed/schedules`) only when `LIBRA_OS_SCHEDULES_ENABLED` is set; the
+  get-started compose file leaves it off and this app has no schedule UI.
 - **Seeing or deleting your memory item by item.** The panel shows the
   condensed notes; there's no user-facing delete. That includes what you
   learned from a document you have since deleted: memory keeps the

@@ -179,18 +179,6 @@ def employee_bundle() -> bytes:
     return buf.getvalue()
 
 
-async def reload_agents(c: Client) -> None:
-    """Make the kernel load the bundle's agent file.
-
-    Kernel v0.2.2 registers the bundle's employee at once but reads its agent
-    file on the next agent-registry reload, which any write to `/v1/agents`
-    (or a SIGHUP to the kernel) triggers. A throwaway agent write is that
-    nudge.
-    """
-    await c.agents.create(id=f"{AGENT_ID}-reload", type="skill", tool_scope="none", system="reload")
-    await c.agents.delete(f"{AGENT_ID}-reload")
-
-
 async def main() -> None:
     base_url = os.environ.get("LIBRA_OS_URL", "https://nova.your-company.example")
     api_key = os.environ["LIBRA_OS_API_KEY"]
@@ -216,7 +204,6 @@ async def main() -> None:
             )
             r.raise_for_status()
             print(f"Imported bundle: {r.json()}")
-        await reload_agents(c)
 
         # 3. Send the MSA to the agent chat endpoint. The agent calls
         #    lookup_clause_precedent zero or more times via the Mode B webhook
@@ -237,7 +224,11 @@ async def main() -> None:
                         f"to the result. Flag any clause materially out of line with the "
                         f"precedent corpus as risk_flag=high.\n\n"
                         f"---\n{msa_text}\n---"
-                    )
+                    ),
+                    # Each contract is reviewed on its own. Memory recalls earlier
+                    # answers without the tool results behind them, and the model
+                    # repeats those instead of the precedent scores just returned.
+                    "no_memory": True,
                 },
             )
             r.raise_for_status()  # 422 output_violation if repair also fails
