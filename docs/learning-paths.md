@@ -57,8 +57,8 @@ Runtime authorization, retrieval quality, or model reliability.
 - [Marketing Team](../apps/digital-marketing-team/): a complete mission demonstration;
   its [pack](../packs/marketing-team/) describes the contract and its
   [console](../apps/mission-console/) provides a reusable interface to that same mission.
-- [Existing App Integration](https://github.com/libraos/libraos/issues/1727): planned
-  tutorial for adding LibraOS to an existing order-management application. The
+- **Existing App Integration**: a tutorial idea for adding LibraOS to an
+  existing order-management application, not a runnable example. The
   application's own backend continues to own its records and authorization.
 
 The last item is a follow-up, not a third runnable app. No new application

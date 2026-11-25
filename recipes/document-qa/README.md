@@ -4,7 +4,7 @@ End-to-end worked example: a partner ingests policy documents into a knowledge c
 
 ## What this demonstrates
 
-- **Knowledge ingest + binding** — the recipe creates the collection, `c.knowledge.ingest(...)` indexes each document into it, and `knowledge_bindings=[...]` on the agent scopes retrieval to it. The recipe deletes and creates the collection first, so each run starts empty. Before kernel v0.3.0 this step was also required: a collection that only ingest created could not be bound, and the binding was dropped with just a log line ([libraos/libraos#615](https://github.com/libraos/libraos/issues/615), fixed by #1732). Creating it is an admin call (`POST /api/knowledge/collections`) the SDK does not wrap yet. The persona only ever retrieves from what you bound it to, and the retrieved passages are injected into every turn.
+- **Knowledge ingest + binding** — the recipe creates the collection, `c.knowledge.ingest(...)` indexes each document into it, and `knowledge_bindings=[...]` on the agent scopes retrieval to it. The recipe deletes and creates the collection first, so each run starts empty. Before kernel v0.3.0 this step was also required: a collection that only ingest created could not be bound, and the binding was dropped with just a log line. Creating it is an admin call (`POST /api/knowledge/collections`) the SDK does not wrap. The persona only ever retrieves from what you bound it to, and the retrieved passages are injected into every turn.
 - **`tool_scope="none"`** — the copilot answers from the injected passages and needs no catalog tools; a persona that declares no scope is offered the whole catalog, which only slows the answer down.
 - **`knowledge_gate`** — for a knowledge-bound persona, a *confident* retrieval hit is answered directly on the cheap tier without waking the planner; a low-confidence miss **fails open** to the full pipeline. It is switched on per agent in the agent definition (`knowledge_gate: true` in an agent file or employee bundle, see the [`customer-support`](../customer-support/) recipe for the bundle pattern); from kernel v0.3.0 `c.agents.create(..., knowledge_gate=True)` takes it too. This recipe leaves it off and runs on the standard persona path. The deployment-wide switch is `LIBRA_OS_KNOWLEDGE_GATE_ENABLED`.
 - **Grounded refusal** — the last question ("parental leave") isn't in the handbook. A correct answer declines rather than inventing a plausible policy. That behaviour is the whole point of grounding: "here's the source" beats "sounds right".
@@ -52,4 +52,4 @@ Citations are the ingested document ids. A smoke check: the first two answers ca
 
 ## Prose companion
 
-The LibraOS docs guide covers collection setup, per-user scoping, and retrieval/grounding options: **https://docs.meganova.ai → LibraOS → Use Cases → Document Q&A Copilot**.
+See the [LibraOS cookbook guide](https://libraos.com/docs/cookbook/) for the Document Q&A learning path and related examples.

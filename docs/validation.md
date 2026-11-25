@@ -12,9 +12,10 @@ python -m pytest -m 'not live' --junitxml=test-results.xml
 node --experimental-strip-types --test shared/mission-client/src/index.test.ts
 ```
 
-The GitHub workflow runs without model keys or a kernel. It checks the real SDK's
-serialization against HTTP fixtures, the callback verifier through an ASGI
-transport, schema rejection, recovery handles and mission event reduction.
+The GitHub workflow uses Python 3.12 and Node 22 without model keys or a kernel.
+It checks the real SDK's serialization against HTTP fixtures, the callback
+verifier through an ASGI transport, schema rejection, recovery handles and
+mission event reduction.
 It uploads JUnit results. This suite is deterministic and suitable for PR gating.
 
 ## Coverage and remaining live checks
@@ -28,13 +29,13 @@ It uploads JUnit results. This suite is deterministic and suitable for PR gating
 | Memory | Separate tokens, fresh conversation IDs, no forwarded history, identity preflight, conversation-access responses | Opt-in A conversation read/B denial, plus positive recall and cross-user/override isolation; probabilistic recall is not a complete authorization audit |
 | Async Job | Persisted idempotency/ID, uncertain submit, resume, timeout, cancellation race, terminal states and read failures | Opt-in submit/resume/completion; actual kernel restart durability is outside this client's proof |
 | Mission Decision | Pending gate, reducer failure, replay, 403 from decision endpoint | Server-side ownership/role matrix still requires a named Runtime integration test |
-| Tool Action Approval | Not implemented as a standalone tutorial yet | Approval/rejection/permission and exactly-once side effects tracked in the core repository |
+| Tool Action Approval | Not implemented as a standalone tutorial | Approval, rejection, permissions and exactly-once side effects remain unverified; see [approval mechanisms](approval-mechanisms.md) |
 | Marketing Mission | Stream replay/reconnect, event dedup, pending decision, report and failure states | Full mission/model run remains separate from client protocol tests |
 
 Customer Support and Legaltech register their agent from an employee bundle. From
-kernel v0.3.0 the import loads the agent itself (#1731), and `POST /v1/agents`
-also takes `custom_tools` ([#1729](https://github.com/libraos/libraos/issues/1729)),
-which the Tools recipe uses. `tests/test_memory_scoping.py` checks which memory
+kernel v0.3.0 the import loads the agent itself, and `POST /v1/agents`
+also takes `custom_tools`, which the Tools recipe uses.
+`tests/test_memory_scoping.py` checks which memory
 each recipe reads: `no_memory` on stateless recipes, `X-Canonical-User` on
 per-customer and per-patient ones.
 
@@ -65,10 +66,21 @@ acceptable supporting documents, required facts and prohibited invented facts.
 An evaluator should assess source support and refusal semantics, not insist on
 one refusal phrase. This model-quality evaluation is not yet automated here.
 
+## Freshness review — 2026-11-25 (offline only)
+
+The public v0.3.1 release and its container image were checked and the local
+Compose default was updated. No Runtime, browser session against the Runtime,
+or model/provider was run. The checks described in the October records were
+not repeated live on v0.3.1. See the [review](../REVIEW-2026-11.md) for evidence
+and follow-ups, including authorization, identity isolation and mission behavior.
+
+Offline on Python 3.12 and Node 22: recipe compilation, 72 Python tests (four
+live tests excluded), nine mission-client tests, and all four browser builds passed.
+
 ## Verification record — 2026-10-29 (kernel v0.3.0, every example)
 
-Kernel **v0.3.0** (`52cb8d7b`), the get-started Compose file from fresh volumes
-(its default is now v0.3.0), MegaNova gateway with `gemini/gemini-2.5-flash`,
+Kernel **v0.3.0**, then the get-started Compose default, from fresh volumes;
+MegaNova gateway with `gemini/gemini-2.5-flash`,
 SDK 2.0.0. Where a result looked like a regression, the same run was repeated
 on a v0.2.2 kernel with the same model.
 
@@ -99,13 +111,13 @@ on a v0.2.2 kernel with the same model.
 - Marketing mission through the shared mission client: 5 of 10 missions on
   v0.3.0 planned, answered one decision and produced a report; 3 of 4 on v0.2.2.
   Failures were invalid plans on both versions and, on v0.3.0 only, a plan that
-  was not valid JSON (2 of 10). Tracked as a kernel follow-up.
+  was not valid JSON (2 of 10).
 - All four web apps build; `setup.sh` for both apps succeeds.
 - Offline: 64 Python tests passed, 9 mission client tests passed.
 
 ## Verification record — 2026-10-29 (Tool Calling)
 
-- Kernel **v0.3.0** (`52cb8d7b`), fresh Compose volumes, MegaNova gateway, SDK 2.0.0.
+- Kernel **v0.3.0**, fresh Compose volumes, MegaNova gateway, SDK 2.0.0.
   The recipe now registers its agent through `POST /v1/agents` instead of an
   app manifest; v0.2.2–v0.2.4 never offered `custom_tools` to the model.
 - `gemini/gemini-2.5-flash`: documented runs pass; `tool_lookup` live test
@@ -134,7 +146,7 @@ on a v0.2.2 kernel with the same model.
   certified by the mocked tests.
 - Compose default at the time: kernel v0.2.2. Record `/api/version` when running live;
   do not treat that default as evidence of feature parity with current source.
-- Async issue #1708: closed when checked; HTTP example retains native shapes.
+- The HTTP async example retained native response shapes.
 - Baseline integration: [PR #12](https://github.com/libraos/cookbook/pull/12),
   [PR #13](https://github.com/libraos/cookbook/pull/13),
   [PR #14](https://github.com/libraos/cookbook/pull/14) and
@@ -144,5 +156,5 @@ on a v0.2.2 kernel with the same model.
 
 For a new recipe, include level, prerequisites, dependencies, feature flags,
 observable result, failure/boundary tests, cleanup, verification status and the
-next learning step. Track implementation work in
-[`libraos/libraos`](https://github.com/libraos/libraos/issues/1726).
+next learning step. Report Runtime issues in the
+[public LibraOS issue tracker](https://github.com/libraos/community/issues).

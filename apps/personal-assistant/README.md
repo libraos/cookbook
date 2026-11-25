@@ -33,9 +33,10 @@ normal user, not an admin.
 
 ## Quickstart
 
-1. Start the kernel (v0.3.0) from
-   [`get-started/`](../../get-started/README.md). Its
-   `docker-compose.yml` already mounts `libraos-app/` into the kernel and
+1. Start the kernel from [`get-started/`](../../get-started/README.md).
+   The Compose default is v0.3.1; uploads, chat and memory were last checked
+   live on v0.3.0. The
+   Compose file already mounts `libraos-app/` into the kernel and
    switches on memory and document indexing. In `get-started/.env`, set
    `PA_DEMO_PASSWORD` (12+ characters), the embedding lines
    (`LIBRA_OS_EMBEDDING_API_BASE`, without `/v1`, and
@@ -55,7 +56,7 @@ normal user, not an admin.
    # user: created demo@example.com
    ```
 
-3. Run the web app:
+3. Run the web app (Node.js 22.12 or newer):
 
    ```bash
    cd apps/personal-assistant/web

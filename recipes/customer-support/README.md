@@ -71,4 +71,4 @@ Terminal 1 logs one `POST /nova/cb/...` per tool call; that line is the smoke ch
 
 ## Prose companion
 
-The LibraOS docs guide walks the full build (knowledge + tools + guardrails + streaming) with decision criteria and success metrics: **https://docs.meganova.ai → LibraOS → Use Cases → Customer Support Agent**.
+See the [LibraOS cookbook guide](https://libraos.com/docs/cookbook/) for the Customer Support learning path and related examples.

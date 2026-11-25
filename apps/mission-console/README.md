@@ -8,7 +8,7 @@ A browser app that runs any team mission from the cookbook's [packs](../../packs
 
 The console is the [digital marketing team](../digital-marketing-team/) app generalized. Mission-specific text (lead name, headline, example) comes from [`src/catalog.ts`](src/catalog.ts). All kernel calls go through the shared [mission client](../../shared/mission-client/).
 
-**Today the catalog has one entry, the [`marketing-team`](../../packs/marketing-team/) pack's mission.** It runs on the kernel's built-in `head-of-marketing` lead. When [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660) lets packs declare mission templates, other teams join the catalog.
+**Today the catalog has one entry, the [`marketing-team`](../../packs/marketing-team/) pack's mission.** It targets the kernel's built-in `head-of-marketing` lead. The console does not discover additional teams or load mission templates from packs.
 
 ## Run it
 

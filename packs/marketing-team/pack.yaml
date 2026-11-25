@@ -1,10 +1,8 @@
 # Marketing team pack: the autonomous digital marketing department.
 #
-# Status: contract. Today the kernel runs this team through its built-in
-# `head-of-marketing` mission engine, whose prompts and limits are compiled in.
-# libraos/libraos#1660 makes the engine load mission templates from packs; until
-# then this file and missions/ describe the team, and apps/digital-marketing-team
-# runs it unchanged.
+# Status: contract. This file and missions/ describe the team.
+# apps/digital-marketing-team calls the kernel's built-in mission engine;
+# it does not load this pack as a Runtime mission template.
 name: marketing-team
 display_name: Digital Marketing Team
 version: 0.1.0
@@ -14,7 +12,6 @@ description: >
   attributed report. Nothing is published without approval.
 
 agents:
-  # Built into the kernel today; becomes a regular agent file with #1660.
   director: head-of-marketing
 
 knowledge:

@@ -103,5 +103,5 @@ async def test_contract_review_runs_without_memory_and_without_a_reload_nudge(mo
     await legal.main()
     chat = next(r for r in seen if r.url.path == f"/agents/v1/{legal.AGENT_ID}/chat")
     assert json.loads(chat.content)["no_memory"] is True
-    # Kernel v0.3.0 loads an imported bundle's agents itself (#1731).
+    # Kernel v0.3.0 loads an imported bundle's agents itself.
     assert not any(r.method == "POST" and r.url.path == "/v1/agents" for r in seen)

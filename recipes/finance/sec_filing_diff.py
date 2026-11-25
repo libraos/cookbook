@@ -158,7 +158,7 @@ async def main() -> None:
         )
 
         # 2. Kick off the async job: POST /agents/v1/{agent}/jobs. It is called
-        #    directly for older-kernel compatibility. #1708 is now closed;
+        #    directly for older-kernel compatibility;
         #    verify managed-route support before switching the deployed API.
         payload = {
             "ticker": "ACME",

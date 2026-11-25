@@ -1,7 +1,8 @@
 # Shared recipe environment
 
-Use Python **3.12** for the documented test environment, Node **22.12+** for the
-mission-client tests, and a disposable local Runtime. From the repository root:
+Use Python **3.12** and Node **22.12+** to match CI. A disposable local Runtime is
+needed only for running the examples or opt-in live evaluations. From the
+repository root:
 
 ```bash
 python3.12 -m venv .venv
@@ -11,8 +12,8 @@ python -m pip install -r requirements-dev.txt
 
 Start the kernel as described in [get-started](../get-started/README.md).
 The examples inherit the kernel's configured model unless they explicitly
-declare a model cascade. Older industry recipes still declare their own model
-names; configure those to match models your endpoint actually serves.
+declare a model cascade. If you add a cascade, use model names your endpoint
+actually serves.
 
 ## Use the local quickstart token in Python examples
 
@@ -59,6 +60,9 @@ access tokens instead. The memory preflight checks `/oauth/userinfo`, rejects
 admin identities and equal subjects, and checks that memory is enabled.
 
 ## Shared memory in the local kernel
+
+The isolation and impersonation behavior below was observed on v0.3.0. Repeat
+the boundary checks on your deployed version before relying on it.
 
 The get-started Compose file turns observational memory on for the personal
 assistant, and it applies to every agent. The kernel keeps one memory log per

@@ -28,9 +28,7 @@ callback with the secret held in the environment variable named by
 `LIBRA_OS_CB_SECRET_REF` (default `LIBRA_OS_CALLBACK_SECRET_SUPPORT`); the
 webhook server verifies with the same value, passed as `LIBRA_OS_CB_SECRET`.
 
-The prose companion (knowledge + tools + guardrails + streaming together) lives
-in the LibraOS docs:
-https://docs.meganova.ai → LibraOS → Use Cases → Customer Support Agent.
+See the recipe README for setup and the knowledge, tool, and guardrail contract.
 
 Prerequisites::
 

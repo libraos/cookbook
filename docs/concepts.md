@@ -36,4 +36,4 @@ skills      what an agent can do                                 search_web, fet
 
 A mission is a repeatable job for a pack's team. The director turns a mission request into a plan (tasks, owners, dependencies, approval gates), the specialists work in dependency order with their outputs and sources recorded, and the director synthesizes one attributed deliverable. People stay in control at the gates the mission declares, and nothing reaches the outside world without approval.
 
-Today the kernel's mission engine runs the marketing team only, with its prompts compiled in. Loading mission templates from packs is proposed in [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660).
+The cookbook's marketing example runs through the kernel's built-in mission engine, with its prompts compiled in on the last tested release (v0.3.0). The [marketing pack](../packs/marketing-team/) documents the mission contract; the cookbook does not load it as a Runtime mission template.
