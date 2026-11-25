@@ -17,13 +17,11 @@ This example deliberately uses **native HTTP**, not `Client.jobs`:
 | State | `queued`, `running`, `done`, `failed`, `cancelled` |
 | Output | `job_id`, `status`, optional `result` / `error` |
 
-[#1708](https://github.com/libraos/libraos/issues/1708), originally recording the
-SDK/Runtime route mismatch, was **closed** when checked on 2026-10-16. Current
-Runtime source includes the managed route too. Older deployed releases may not.
-Do not generalize the original Finance warning to every current SDK/Runtime
-combination, or mix native `done`/`result` with managed response shapes. A future
-SDK edition should verify the full create/get/cancel/status mapping on a named
-release before switching this tutorial.
+The [SDK 2.0.0 API specification](https://github.com/libraos/sdk/blob/v2.0.0/openapi/libra-os-partner.v1.yaml)
+describes both the native and managed routes. A documented route does not prove
+that every deployed release supports it. Do not mix native `done`/`result`
+with managed response shapes. Verify the full create/get/cancel/status mapping
+on a named release before switching this tutorial to the SDK route.
 
 **Validation status:** offline HTTP contracts pass. Real Runtime execution and
 durability on a tagged release remain to be recorded. The common Compose pin

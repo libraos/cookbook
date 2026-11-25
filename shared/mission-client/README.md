@@ -36,7 +36,7 @@ const job = await client.stream(jobID, (event, sequence) => {
 
 **Stream lifetime:** the kernel sends `: nova-heartbeat` comments every 10 seconds (the parser skips comments), and closes the stream once the job is `done`, `failed` or `cancelled`. The client then reads the job and resolves with it. A connection that drops before that is reopened with `Last-Event-ID` after a short backoff; aborting the `signal` rejects the promise with `AbortError`.
 
-**Today the lead is the kernel's built-in `head-of-marketing`.** [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660) proposes mission templates in packs, so other teams' leads can run missions through the same routes.
+**The cookbook uses the kernel's built-in `head-of-marketing` lead.** The client takes a lead ID; it does not discover leads or load mission templates from packs.
 
 ## Test
 

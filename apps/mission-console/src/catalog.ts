@@ -1,7 +1,6 @@
 // The missions this console can run. Each entry names a pack, one of its
-// missions, and the lead agent that owns it on the kernel. Until LibraOS serves
-// mission templates from packs (libraos/libraos#1660), the catalog lives here
-// and only the marketing team's built-in lead can run.
+// missions, and the lead agent that owns it on the kernel. The catalog is
+// static; it does not discover missions or load templates from packs.
 export type CatalogMission = {
   id: string;
   pack: string;

@@ -4,6 +4,6 @@ A pack is a reusable **team**: a director (the lead who plans and synthesizes), 
 
 | Pack | Missions | Status |
 | --- | --- | --- |
-| [`marketing-team/`](marketing-team/) | `autonomous-marketing-department` | Runs today through the kernel's built-in mission engine, from [`apps/mission-console`](../apps/mission-console/) or [`apps/digital-marketing-team`](../apps/digital-marketing-team/) |
+| [`marketing-team/`](marketing-team/) | `autonomous-marketing-department` | Targets the kernel's built-in mission engine from [`apps/mission-console`](../apps/mission-console/) or [`apps/digital-marketing-team`](../apps/digital-marketing-team/) |
 
-Mission templates loaded from packs are proposed in [libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660); the restructure and an `investment-dd` pack are tracked in [#6](https://github.com/libraos/cookbook/issues/6).
+These examples do not load Runtime mission templates from packs. See [the cookbook pack proposal](https://github.com/libraos/cookbook/issues/6) for background, including an `investment-dd` pack idea.

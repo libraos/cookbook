@@ -48,17 +48,16 @@ Head of Marketing employee
     └─ lead synthesis ───► attributed, source-backed report
 ```
 
-The runtime implementation lives in LibraOS core under
-`internal/workflow/mission.go`. PostgreSQL stores the job event log and workflow
+PostgreSQL stores the job event log and workflow
 checkpoints, which lets the browser reconnect and the kernel resume an orphaned
 mission without replaying completed work.
 
 ## Run it
 
-Start the kernel from [`get-started/`](../../get-started/) (kernel v0.3.0 by
-default; checked on v0.3.0). The mission engine needs PostgreSQL, the workflow runtime and this
-app's sign-in client, which the get-started compose file and `.env.example`
-already set:
+Start the kernel from [`get-started/`](../../get-started/). The Compose default
+is v0.3.1; the mission was last checked live on v0.3.0. It needs PostgreSQL,
+the workflow runtime and this app's sign-in client. The get-started Compose
+file and `.env.example` already set them:
 
 ```dotenv
 LIBRA_OS_WORKFLOWS_ENABLED=true
@@ -83,7 +82,7 @@ The setup script also ingests [`packs/marketing-team/knowledge/libraos-product-b
 native LibraOS `default` knowledge collection. Research employees cite that
 runtime source directly; no GBrain or mandatory MCP dependency is involved.
 
-Then run the browser app:
+Then run the browser app (Node.js 22.12 or newer):
 
 ```bash
 cd apps/digital-marketing-team/web
@@ -107,8 +106,7 @@ task's `dependencies`, and the mission then ends `failed` with
 before any task starts. Each specialist must also reply in JSON; a
 truncated reply fails a critical task with
 `invalid structured output: unexpected end of JSON input`. Nothing in the
-app or the pack changes those prompts (they are compiled into the kernel; see
-[libraos/libraos#1660](https://github.com/libraos/libraos/issues/1660)):
+app or the pack changes those prompts (they come from the built-in mission):
 click **New mission** and submit again, or use a stronger model for
 `LIBRA_OS_SKILL_MODEL`.
 

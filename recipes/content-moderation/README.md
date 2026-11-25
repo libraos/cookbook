@@ -46,4 +46,4 @@ Scores and the exact accuracy depend on the model the kernel routes the skill ti
 
 ## Prose companion
 
-The LibraOS docs guide covers policy design, the firewall relationship, and success criteria: **https://docs.meganova.ai → LibraOS → Use Cases → Content Moderation**.
+See the [LibraOS cookbook guide](https://libraos.com/docs/cookbook/) for related examples and validation guidance.

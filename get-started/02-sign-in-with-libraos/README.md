@@ -16,7 +16,8 @@ you ──► app (localhost:5173) ──► LibraOS sign-in page ──► back
 
 ## Run it
 
-You need the local kernel from [`../`](../README.md) running (`docker compose up -d`).
+You need the local kernel from [`../`](../README.md) running (`docker compose up -d`)
+and Node.js 22.12 or newer.
 
 ```bash
 cd get-started/02-sign-in-with-libraos

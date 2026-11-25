@@ -7,9 +7,7 @@ End-to-end partner-side script:
     3. Asks a question the documents answer (grounded, cited) and one they do
        NOT (the agent should decline rather than fabricate).
 
-The prose companion (collection setup, retrieval tuning, the knowledge gate)
-lives in the LibraOS docs:
-https://docs.meganova.ai → LibraOS → Use Cases → Document Q&A Copilot.
+See the recipe README for collection setup and the knowledge gate.
 
 Prerequisites::
 
@@ -81,8 +79,8 @@ async def recreate_collection(base_url: str, api_key: str) -> None:
 
     Before kernel v0.3.0, ingest created a collection that search could use but
     not one an agent could be bound to: the binding was dropped with only a
-    log line (libraos/libraos#615, fixed by #1732). Deleting and creating it
-    also starts each run from an empty collection. The SDK has no call for
+    log line. Deleting and creating it also starts each run from an empty
+    collection. The SDK has no call for
     this yet, so it is one admin HTTP request.
     """
     headers = {"authorization": f"Bearer {api_key}"}

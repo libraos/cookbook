@@ -15,9 +15,7 @@ End-to-end partner-side script:
 `repair` retry, and returns the parsed object as `output`. That is the call the
 loop below makes; `/v1/messages` returns the reply as the model wrote it.
 
-The prose companion (policy design, category taxonomy, the firewall threshold
-knob) lives in the LibraOS docs:
-https://docs.meganova.ai → LibraOS → Use Cases → Content Moderation.
+See the recipe README for policy, guardrails, and evaluation guidance.
 
 Prerequisites::
 

@@ -15,9 +15,7 @@ End-to-end partner-side script:
 `repair` retry, and returns the parsed object as `output`. That is the call the
 loop below makes; `/v1/messages` returns the reply as the model wrote it.
 
-The prose companion (decision criteria, taxonomy design, hierarchical
-classification for large taxonomies, few-shot via a bound collection) lives in
-the LibraOS docs: https://docs.meganova.ai → LibraOS → Use Cases → Ticket Routing.
+See the recipe README for the intent taxonomy and evaluation guidance.
 
 Prerequisites::
 

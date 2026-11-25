@@ -17,8 +17,10 @@ application-development branch. For Python recipes, use the
 ## Prerequisites
 
 - Docker with Compose v2.
-- Python 3.10 or newer (for the Python example: `pip install libraos-sdk`).
-- Node.js 20 or newer (for the TypeScript examples).
+- Python 3.10 or newer for the standalone SDK example (`pip install libraos-sdk`);
+  use Python 3.12 for the shared recipe environment and offline tests.
+- Node.js 20 or newer for the standalone TypeScript First Agent script.
+  Use Node.js 22.12 or newer for the browser examples and to match CI's Node 22 line.
 - A model. Either an OpenAI-compatible endpoint and key, or
   [Ollama](https://ollama.com) on this machine. The personal assistant also
   needs an embedding model from the same kind of endpoint.
@@ -51,17 +53,19 @@ docker compose logs -f libraos     # watch it boot
 The kernel listens on <http://localhost:8900>. Then run the examples above,
 each from its own folder.
 
-The compose file runs kernel **v0.3.0** (`ghcr.io/libraos/libraos:v0.3.0`).
-Set `LIBRAOS_VERSION` to run another. The examples here are checked on v0.3.0;
-the Tools recipe needs it, and a database migrated by 0.3 should not be run
-with 0.2.x again (roll forward, not back). `curl http://localhost:8900/api/version` shows the
-one running.
+The Compose file defaults to kernel **v0.3.1** (`ghcr.io/libraos/libraos:v0.3.1`).
+Set `LIBRAOS_VERSION` to run another release. The examples were last run live on
+v0.3.0; see the [verification record](../docs/validation.md). The Tools recipe
+requires v0.3.0 or later. Do not run a database migrated by 0.3 on 0.2.x again
+(roll forward, not back). `curl http://localhost:8900/api/version` shows the
+version running.
 
 What the compose file turns on besides the kernel and Postgres (each line is
 commented in `docker-compose.yml`):
 
 - `LIBRA_OS_OBSERVATIONAL_MEMORY=1`: per-user memory for the personal assistant.
 - `LIBRA_OS_SUPERNOVA_ENABLED=true`: parse and index uploaded documents.
+- `LIBRA_OS_WORKFLOWS_ENABLED=true`: run the marketing mission.
 - A read-only mount of `apps/personal-assistant/libraos-app` into the kernel's
   apps folder, and a volume for uploaded documents.
 

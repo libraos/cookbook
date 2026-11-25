@@ -49,4 +49,4 @@ The exact figure depends on the model the kernel routes the skill tier to (`LIBR
 
 ## Prose companion
 
-The LibraOS docs guide covers the decision ("should you use an LLM for routing?"), success criteria, and integration patterns (push webhook vs pull batch): **https://docs.meganova.ai → LibraOS → Use Cases → Ticket Routing**.
+See the [LibraOS cookbook guide](https://libraos.com/docs/cookbook/) for the Ticket Routing learning path and related examples.
